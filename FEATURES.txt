@@ -1,0 +1,281 @@
+================================================================================
+  HELSKA'S MPV TOOLS  -  an mpv script bundle  -  FEATURE GUIDE
+================================================================================
+
+WHAT IT IS
+----------
+Helska's MPV Tools is a pack of small, independent mpv scripts shipped
+together. Each one does a single job (copy a subtitle, grab a screenshot,
+colour Chinese tones, ...) and they all register themselves with a small
+in-player menu called the "Console". You can use any script on its own, and
+you can delete the ones you do not want without breaking the rest.
+
+On Windows everything the scripts need is bundled -- FFmpeg, OpenCC and a
+portable Python with pypinyin -- so the Chinese features work out of the box
+with no extra install.
+
+--------------------------------------------------------------------------------
+INSTALL (two steps)
+--------------------------------------------------------------------------------
+1. Copy  helska.lua  AND the  helska/  folder  together into mpv's scripts/
+   folder (the one that already contains input.conf):
+
+       Windows   %APPDATA%\mpv\scripts\
+       macOS     ~/.config/mpv/scripts/
+       Linux     ~/.config/mpv/scripts/
+
+2. Start (or restart) mpv. That is all.
+
+On the very first launch the loader clears Windows' "downloaded from the
+internet" flag on the bundled tools, so you will not get a SmartScreen prompt.
+
+To uninstall, delete both helska.lua and the helska/ folder.
+
+--------------------------------------------------------------------------------
+REQUIREMENTS
+--------------------------------------------------------------------------------
+* Windows for the bundled tools (FFmpeg / OpenCC / Python are Windows builds).
+  Every Lua feature still runs on macOS/Linux; tone colours then need a system
+  Python with pypinyin, and FFmpeg/OpenCC are taken from your PATH.
+* A reasonably recent mpv (tested on mpv 0.41.0). The "Subtitle clipboard"
+  feature needs a build that offers mpv's built-in clipboard/text property.
+
+--------------------------------------------------------------------------------
+DEFAULT KEY REFERENCE
+--------------------------------------------------------------------------------
+  TAB ...................... open / close the Console menu
+  Ctrl+E ................... copy the current subtitle's audio to the clipboard
+  Ctrl+Shift+E ............. manual audio clip (1st press = start, 2nd = end)
+  Alt+E .................... audio-boost menu (gain applied to extracted clips)
+  Ctrl+T ................... toggle Mandarin tone-coloured subtitles
+  Ctrl+Alt+C ............... toggle Simplified <-> Traditional conversion
+  Alt+T .................... open the tone-colour palette editor
+  Ctrl+Shift+X ............. extract the current subtitle track to a file
+  Ctrl+. / Ctrl+, .......... next / previous video in the same folder
+  Ctrl+S ................... copy a frame WITH subtitles to the clipboard
+  Ctrl+Shift+S ............. copy a frame WITHOUT subtitles
+  Ctrl+J ................... open the subtitle font / size picker
+  Ctrl+C ................... copy the current subtitle text to the clipboard
+  Ctrl+A ................... toggle auto-copy of every new subtitle
+
+Every key above can be changed in helska/helska.conf (created the first time you
+change a binding or a tone setting) or
+in-player from the Console (see "bind / unbind / defaultbind" below).
+
+--------------------------------------------------------------------------------
+THE CONSOLE  (TAB)
+--------------------------------------------------------------------------------
+The Console is a menu of every action the bundle offers, and it is also where
+you manage key bindings -- so you never have to hand-edit a config file.
+
+  TAB ...................... open / close the Console
+  type ..................... filter the list to matching actions
+  Up / Down ................ move the highlight
+  ENTER .................... run the highlighted action
+  ESC ...................... close
+
+The Console also understands a few commands, typed into its input line:
+
+  bind <command> <key>       assign a key, e.g.  bind tones Ctrl+t
+  unbind <command>           remove the key from one action
+  unbind all                 remove every helska key at once
+  defaultbind <command>      restore one action's default key
+  defaultbind all            restore every default key
+
+Changes are written to helska/helska.conf and applied immediately.
+
+--------------------------------------------------------------------------------
+AUDIO  ->  CLIPBOARD      (needs the bundled FFmpeg)
+--------------------------------------------------------------------------------
+  Ctrl+E ......... Quick Clip: cuts the audio of the subtitle CURRENTLY ON
+                   SCREEN and puts an MP3 of it on the clipboard.
+  Ctrl+Shift+E ... Manual Clip: 1st press sets the START, 2nd press sets the
+                   END and exports that range to the clipboard MP3.
+                     while selecting:
+                       Left / Right         = move by 0.1 s
+                       Shift+Left / Right   = move by 0.5 s
+                       Ctrl+Left / Right    = jump to nearest subtitle start
+                       Alt+Left / Right     = jump to nearest subtitle end
+                       Esc                  = cancel
+  Alt+E .......... Audio Boost menu: a gain applied ONLY to the extracted clip
+                   (never to normal playback). If saved, the value is stored in
+                   helska/helska.conf and remembered next time.
+
+On Windows the MP3 is placed on the clipboard via PowerShell; on macOS via
+osascript. Paste it into any app that accepts a file.
+
+--------------------------------------------------------------------------------
+CHINESE  (tone colours + Hanzi conversion)
+--------------------------------------------------------------------------------
+Three related tools that work on the subtitle track you have selected. They
+never change your original subtitle file: they build a temporary, generated
+subtitle track beside it.
+
+  Ctrl+T ......... toggle automatic Mandarin TONE COLOURS. Each syllable is
+                   coloured by its tone (1st..4th + neutral), using real
+                   pypinyin data for accuracy.
+  Ctrl+Alt+C ..... toggle Simplified <-> Traditional conversion. The direction
+                   is auto-detected, so it works both ways.
+  Alt+T .......... open the tone-colour palette editor. Pick a tone, copy a
+                   #RRGGBB code and paste it (Ctrl+V) to recolour that tone;
+                   you can also reset, edit the config from the menu, and
+                   SAVE & EXIT.
+
+Tone colours and conversion can be used together. Both rebuild from the
+untouched original, so toggling them on/off is always clean.
+
+
+--------------------------------------------------------------------------------
+EXTRACT SUBTITLE
+--------------------------------------------------------------------------------
+  Ctrl+Shift+X ... save the currently selected subtitle track to a file beside
+                   the video (in the source's SRT/ASS format).
+
+  preload-subs ... the same extraction, but instead of saving a new file it
+                   extracts to a temporary file and loads that as a temporary
+                   subtitle track. This command ships UNBOUND; give it a key
+                   with  bind preload-subs <key>  if you want it.
+
+--------------------------------------------------------------------------------
+PLAYBACK  (next / previous video)
+--------------------------------------------------------------------------------
+  Ctrl+. ......... open the next video in the current file's folder.
+  Ctrl+, ......... open the previous video.
+Files are ordered naturally (episode 2 before episode 10) and only real video
+files are considered -- subtitle/sidecar files are skipped. No dependencies.
+
+--------------------------------------------------------------------------------
+SCREENSHOT  ->  CLIPBOARD
+--------------------------------------------------------------------------------
+  Ctrl+S ......... copy the current frame WITH subtitles to the clipboard.
+  Ctrl+Shift+S ... copy the current frame WITHOUT subtitles.
+Paste the image into any compatible app. No FFmpeg needed (mpv does the grab;
+PowerShell / osascript set the clipboard).
+
+--------------------------------------------------------------------------------
+SUBTITLE FONT / SIZE PICKER
+--------------------------------------------------------------------------------
+  Ctrl+J ......... open a picker to change the subtitle font and size live.
+Type to filter the font list, arrow keys to move, ENTER to audition a font
+(the menu stays open so you can compare), Backspace to delete a character
+(Ctrl+Backspace clears the whole search) and Ctrl+V to paste a font name.
+Changes apply immediately; save to keep them in helska/helska.conf.
+
+--------------------------------------------------------------------------------
+SUBTITLE  ->  CLIPBOARD
+--------------------------------------------------------------------------------
+  Ctrl+C ......... copy the subtitle text currently on screen.
+  Ctrl+A ......... toggle auto-copy: every newly shown subtitle is copied.
+Uses mpv's built-in text clipboard -- no external tools required.
+
+
+--------------------------------------------------------------------------------
+TEMPORARY FILES  (helska/temporary_files)
+--------------------------------------------------------------------------------
+Several features need a short-lived working file. Instead of scattering files
+across your system, everything is kept inside ONE folder next to the scripts:
+
+      scripts/helska/temporary_files/
+
+Files appear and clean themselves up automatically as you use the features:
+
+  Screenshots
+      Written there, placed on the clipboard, then deleted again IMMEDIATELY.
+      (The clipboard holds the image itself, so pasting still works any number
+      of times after the file is gone.)
+
+  Audio clips
+      Written there and kept only until the clipboard stops pointing at them --
+      so you can paste the file as many times as you like -- then deleted
+      automatically the moment you copy something else. If the clipboard still
+      points at a clip when you close mpv, it is removed on the next launch.
+
+  Chinese tone colours / Hanzi conversion  and  preload-subs
+      Short-lived subtitle files that are removed when the track is switched
+      off, when you extract again, or when mpv closes. Because these ARE shown
+      in mpv's track list, they are named to read clearly there -- e.g.
+      "Tone colors (sub 2).ass", "Tone colors + Hanzi (sub 2).ass" when tone
+      colours and Hanzi conversion are both active, or
+      "Preloaded subs (sub 2).srt".
+
+SAFETY: only a file that lives INSIDE this folder (and never the README) is
+ever deleted, so nothing else on your computer is ever touched. Files keep
+their original, friendly names - e.g. a pasted audio clip stays named
+"<video>_<start>-<end>_<hash>.mp3" exactly as it appears when you paste it.
+Leftovers are cleared on startup and whenever a new file is loaded, and never
+while the file is still on the clipboard or shown as a track. A tiny
+".helska-session-<pid>" marker is kept while mpv runs so a second mpv window
+never deletes the first window's files.
+
+If you ever see a working file left behind, it only means mpv was force-quit
+before the cleanup ran -- it is removed on the next launch, and deleting it
+yourself is always safe.
+
+
+--------------------------------------------------------------------------------
+WRITING YOUR OWN CONSOLE-COMPATIBLE SCRIPT
+--------------------------------------------------------------------------------
+The bundle is meant to be extended. Any mpv Lua script can join the Console by
+implementing "Console protocol v1" (see the header of helska_console.lua):
+
+  broadcast  helska-console-begin-owner <owner>
+             helska-console-register <owner> <group> <command> <default-key>
+                                     <description> <group-order> <action-order>
+             helska-console-end-owner <owner>
+
+  listen for helska-console-discover          -> (re)send your registrations
+  listen for helska-console-run <command>     -> run your action
+  listen for helska-console-reload-bindings   -> reinstall your key bindings
+  listen for helska-console-focus on/off      -> drop/restore your keys while
+                                                 the Console owns input
+
+WHERE TO PUT IT:
+  * scripts/          -> mpv runs it directly, in its own Lua context. It can
+                         still talk to the Console (script messages are global
+                         to mpv). This is the natural home for a third-party
+                         script and needs no involvement from this bundle.
+  * scripts/helska/   -> the loader auto-discovers it (any file ending in .lua)
+                         and runs it inside the bundle's shared context.
+  * other subfolders  -> NOT loaded. mpv never recurses, and the loader looks
+                         only in helska/. Put the file at the top level or in
+                         helska/ instead.
+
+--------------------------------------------------------------------------------
+MODULES AT A GLANCE  /  DISABLING A FEATURE
+--------------------------------------------------------------------------------
+The loader auto-discovers every *.lua inside helska/ (loading helska_console.lua
+first, the rest in order). So:
+
+  * To DISABLE a feature, DELETE its .lua file from helska/ and restart mpv.
+    Everything else keeps working -- even with the Console removed entirely.
+  * To ADD a feature (yours, or one you decided you want later), drop a .lua
+    into helska/. There is no list to edit.
+
+Shipped modules:
+  helska_console.lua                    the Console menu (TAB)
+  helska_audio-clipboard.lua            audio -> clipboard (uses FFmpeg)
+  helska_chinese.lua                    tone colours + Hanzi conversion
+  helska_extract-current-subtitle.lua   save / preload a subtitle track
+  helska_playback.lua                   next / previous video
+  helska_screenshot-clipboard.lua       frame (with/without subs) -> clipboard
+  helska_subtitle-font.lua              subtitle font / size picker
+  helska_subtitle_clipboard.lua         subtitle text -> clipboard
+  helska_tone_colors.py                 helper used by helska_chinese.lua
+
+Bundled tools:
+  helska/ffmpeg/    FFmpeg (audio clips, subtitle extraction)
+  helska/OpenCC/    OpenCC (Simplified <-> Traditional; trimmed dictionaries)
+  helska/python/    Python 3.11 embeddable + pypinyin (Chinese tone colours)
+
+--------------------------------------------------------------------------------
+TROUBLESHOOTING QUICK NOTES
+--------------------------------------------------------------------------------
+  * Nothing happens on a key: another script may own that key, or you deleted
+    the module's file. Check that the Console (TAB) still lists the action.
+  * Chinese features do nothing: make sure a subtitle track is selected, then
+    toggle again (Ctrl+T / Ctrl+Alt+C, or from the Console).
+  * To see the loader's own messages, start mpv from a terminal
+    (mpv file.mkv) and look for a line beginning "helska loader:".
+  * Windows complains about a bundled .exe: restart mpv once; the loader
+    unblocks the tools automatically on first run.
+

@@ -1,0 +1,23 @@
+# helska ships a deliberate mix of line endings: the loader and the
+# human-facing docs are CRLF, while the Lua modules inside helska/ are LF.
+# These rules pin every file so a checkout on any platform reproduces the
+# shipped bytes exactly.
+* text=auto eol=lf
+
+# --- our files: CRLF, exactly as shipped ----------------------------------
+.gitignore                         text eol=crlf
+.gitattributes                     text eol=crlf
+helska.lua                         text eol=crlf
+README.md                          text eol=crlf
+FEATURES.txt                       text eol=crlf
+MANIFEST.txt                       text eol=crlf
+LICENSE                            text eol=crlf
+THIRD-PARTY-NOTICES.md             text eol=crlf
+helska/temporary_files/README.txt  text eol=crlf
+helska/ffmpeg/README.txt           text eol=crlf
+tools/*.ps1                        text eol=crlf
+
+# --- third-party trees: keep exactly as their upstreams ship them ---------
+helska/OpenCC/**                   -text
+helska/python/**                   -text
+

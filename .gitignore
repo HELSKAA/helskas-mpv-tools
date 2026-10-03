@@ -1,0 +1,26 @@
+# build/runtime artifacts
+__pycache__/
+*.pyc
+.unblocked
+
+# user-generated config (created on first run; keep personal prefs out of the repo)
+helska/helska.conf
+helska/python/Lib/site-packages/**/__pycache__/
+
+# scratch
+_build/_tmp/
+*.tmp
+
+# self-cleaning scratch folder: never commit generated files, keep the README
+helska/temporary_files/*
+!helska/temporary_files/README.txt
+
+# The bundled FFmpeg binary lives only in the Releases zip: it is larger than
+# GitHub's 100 MiB per-file limit, so it is not committed here. The placeholder
+# README stays so the folder and its purpose are always visible in a checkout.
+helska/ffmpeg/*
+!helska/ffmpeg/README.txt
+
+# release artifacts (built by tools/build_release.ps1)
+dist/
+

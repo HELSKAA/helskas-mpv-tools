@@ -1,0 +1,85 @@
+Helska's MPV Tools — MANIFEST
+========================
+Windows-only self-contained build. All paths relative to this file.
+
+This is the DEFAULT pack. It ships 8 Lua modules (the Console + 7 features).
+The optional "hold-to-speed" and "rebind mouse 4/5 to arrows" helpers are
+intentionally NOT included; the loader auto-discovers *.lua files, so you can
+drop either one into helska/ later and it will simply load.
+
+MODULES (Lua)
+-------------
+helska.lua                              loader (auto-discovers helska/*.lua)
+helska/helska_console.lua               Console menu (TAB)
+helska/helska_audio-clipboard.lua       audio -> clipboard (FFmpeg)
+helska/helska_chinese.lua               tone colours + Hanzi conversion
+helska/helska_extract-current-subtitle.lua  save / preload a subtitle track
+helska/helska_playback.lua              next / previous video
+helska/helska_screenshot-clipboard.lua  frame (with/without subs) -> clipboard
+helska/helska_subtitle-font.lua         subtitle font / size picker
+helska/helska_subtitle_clipboard.lua    subtitle text -> clipboard
+helska/helska_tone_colors.py            helper used by helska_chinese.lua
+
+SHARED FOLDER
+-------------
+helska/temporary_files/README.txt       self-cleaning scratch folder (see
+                                        FEATURES.txt). Features write their
+                                        short-lived working files here and
+                                        delete them automatically; generated
+                                        files are never committed.
+
+NOTE: helska/ffmpeg/ffmpeg.exe is NOT stored in the git repository - it is
+larger than GitHub's 100 MiB per-file limit. It is included in the release
+.zip; see helska/ffmpeg/README.txt.
+
+BUNDLED TOOLS (SHA-256)
+-----------------------
+helska/ffmpeg/ffmpeg.exe
+  SHA256  3256173F3F8BFFD7DF12227C68ADF68025EDB1832273A9530688A7BB1ED8EDEC
+  size    102,953  KB
+  source  inherited from the existing mpv scripts folder (Windows FFmpeg
+          build; gyan.dev or BtbN are typical upstreams)
+
+helska/OpenCC/bin/opencc.exe
+  SHA256  89FEE21CA7A40B2879EFA3ED946A36398B37D119B627D7B1246ECE020A6DA005
+  size    559.5   KB
+  source  inherited from the existing mpv scripts folder (BYVoid/OpenCC)
+
+helska/python/python.exe   (official python.org embeddable)
+  SHA256  5F7B89A612C9B8AF1D6456CDFCD1DBE5CA630849E79AEBCED9BEE9A6694952EC
+  size    100.8   KB
+  source  https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip
+
+helska/python/python311.zip  (embeddable stdlib)
+  SHA256  7D0F59C930E7D3D9352399EA3C95C0272489B3C09A8E95FAAEDFA8A23E20E5B1
+  size    4185.2  KB
+  source  same zip as python.exe above
+
+PYTHON PACKAGES
+---------------
+helska/python/Lib/site-packages/pypinyin (v0.55.0)
+  source  https://pypi.org/project/pypinyin/ (pure-Python, copied from the
+          build machine's installed site-packages)
+
+OpenCC dictionaries (trimmed to the s2t/t2s dependency closure)
+----------------------------------------------------------------
+helska/OpenCC/share/opencc/s2t.json
+helska/OpenCC/share/opencc/t2s.json
+helska/OpenCC/share/opencc/CJK_Compatibility_Ideographs.ocd2
+helska/OpenCC/share/opencc/STPhrases.ocd2
+helska/OpenCC/share/opencc/STPhrases_GeneratedFromRegionalPhrases.ocd2
+helska/OpenCC/share/opencc/STCharacters.ocd2
+helska/OpenCC/share/opencc/TSPhrases.ocd2
+helska/OpenCC/share/opencc/TSCharactersExt.ocd2
+helska/OpenCC/share/opencc/TSCharacters.ocd2
+  source  BYVoid/OpenCC (share/opencc data from the existing scripts folder)
+
+LICENSES
+--------
+- OpenCC: helska/OpenCC/LICENSE.txt (Apache-2.0)
+- Python embeddable: helska/python/LICENSE.txt (PSF)
+- pypinyin: MIT (see helska/python/Lib/site-packages/pypinyin)
+- mpv scripts in this bundle: see the helska_*.lua file headers
+
+VERIFICATION: recompute any hash with
+  certutil -hashfile "<file>" SHA256
