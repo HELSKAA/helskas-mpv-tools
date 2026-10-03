@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # Builds the self-contained release zip for the GitHub Releases page.
 #
-#   powershell -ExecutionPolicy Bypass -File tools/build_release.ps1 -Version 1.0.0
+#   powershell -ExecutionPolicy Bypass -File tools/build_release.ps1 -Version 1.0.1
 #
 # The zip contains EXACTLY what a user extracts into mpv's scripts/ folder:
 #
@@ -13,7 +13,7 @@
 # is never included.
 # ---------------------------------------------------------------------------
 param(
-    [string]$Version = "1.0.0",
+    [string]$Version = "1.0.1",
     [string]$Root    = (Split-Path -Parent $PSScriptRoot),
     [string]$OutDir  = (Join-Path (Split-Path -Parent $PSScriptRoot) "dist")
 )
@@ -49,6 +49,16 @@ Get-ChildItem $bundle -Recurse -Force | ForEach-Object {
         $parent = Split-Path $dest -Parent
         if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
         Copy-Item $_.FullName $dest -Force
+    }
+}
+
+# Ship FFmpeg's GPLv3 license text + written source offer at the zip root.
+# The bundled FFmpeg build is GPLv3, so these must travel with it (see
+# THIRD-PARTY-NOTICES.md).
+$licenses = Join-Path $Root "licenses"
+if (Test-Path $licenses) {
+    Get-ChildItem $licenses -File | ForEach-Object {
+        Copy-Item $_.FullName (Join-Path $stage $_.Name) -Force
     }
 }
 

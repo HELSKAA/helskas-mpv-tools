@@ -81,7 +81,7 @@ local function get_config_value(key)
     local s = read_file(config_path)
     if not s then return nil end
     for line in s:gmatch("[^\r\n]+") do
-        local k,v = line:match("^%s*([^#;][^=]-)%s*=%s*(.-)%s*$")
+        local k,v = line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
         if k and v and k:gsub("%s+$","") == key then
             return v
         end

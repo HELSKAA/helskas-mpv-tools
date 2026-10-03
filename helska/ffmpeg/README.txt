@@ -15,5 +15,7 @@ than GitHub's 100 MiB per-file limit). The release .zip includes it. To add
 FFmpeg yourself, drop a build in here under one of the names above and restart
 mpv.
 
-FFmpeg is licensed separately from Helska's MPV Tools (usually GPL, sometimes
-LGPL, depending on the build). See THIRD-PARTY-NOTICES.md at the bundle root.
+The bundled binary is the gyan.dev "essentials" build of FFmpeg 9.0.2 (GPLv3).
+FFmpeg is licensed separately from Helska's MPV Tools; the release .zip carries
+its license text and a written source offer at its root. See
+THIRD-PARTY-NOTICES.md at the bundle root.

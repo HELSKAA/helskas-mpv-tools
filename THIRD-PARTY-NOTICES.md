@@ -9,7 +9,7 @@ third-party software, which stays under its own license:
 | OpenCC | `helska/OpenCC/` | Apache-2.0 | Full text: `helska/OpenCC/LICENSE.txt`. Upstream: https://github.com/BYVoid/OpenCC |
 | Python 3.11 (embeddable) | `helska/python/` | PSF License | Full text: `helska/python/LICENSE.txt`. Upstream: https://www.python.org/ |
 | pypinyin | `helska/python/Lib/site-packages/pypinyin/` | MIT | Text below. Upstream: https://github.com/mozillazg/python-pinyin |
-| FFmpeg | `helska/ffmpeg/` (release zip only) | GPL / LGPL (depends on the build) | See `helska/ffmpeg/README.txt`. Upstream: https://ffmpeg.org/ |
+| FFmpeg | `helska/ffmpeg/` (release zip only) | GPLv3 | gyan.dev "essentials" build 9.0.2. License text and source offer ship in the release zip as `FFmpeg-COPYING.GPLv3.txt` / `FFmpeg-SOURCE-OFFER.txt`. Upstream: https://ffmpeg.org/ |
 
 ## FFmpeg
 
@@ -18,13 +18,15 @@ than GitHub's 100 MiB per-file limit. The download-ready bundle on the
 **Releases** page does include an FFmpeg build, so the audio-clip and
 subtitle-extraction features work out of the box.
 
-FFmpeg is licensed separately from Helska's MPV Tools, and the license depends
-on the build: most prebuilt Windows binaries (gyan.dev, BtbN) are under the
-**GPL**, some under the **LGPL**. If you redistribute this bundle, keep
-FFmpeg's own license and copyright notices intact and comply with the terms of
-the build you ship. If you are not sure which build is included, or GPL
-redistribution is a concern, delete `helska/ffmpeg/` and install FFmpeg
-yourself - the scripts fall back to whatever `ffmpeg` is on your `PATH`.
+The shipped binary is the **gyan.dev "essentials" build of FFmpeg 9.0.2**,
+configured with `--enable-gpl --enable-version3`. That makes it a **GPLv3**
+build. To satisfy the GPL's redistribution terms, the release zip also carries
+FFmpeg's license text (`FFmpeg-COPYING.GPLv3.txt`) and a written offer for the
+corresponding source (`FFmpeg-SOURCE-OFFER.txt`) at its root.
+
+If you would rather not redistribute a GPL binary, delete `helska/ffmpeg/` and
+install FFmpeg yourself - the scripts fall back to whatever `ffmpeg` is on your
+`PATH` (an LGPL build also works for the audio features).
 
 FFmpeg license text and corresponding source: https://ffmpeg.org/legal.html
 

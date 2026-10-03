@@ -143,32 +143,14 @@ for _, file in ipairs(modules) do
     end
 end
 
--- 5) Install one real router per shared message. For "run" we quiet only the
---    expected "Unknown Helska Console action" warnings (spawned by the modules
---    that do not own the action being invoked); real warnings still show.
+-- 5) Install one real router per shared message.
 mp.register_script_message = real_register -- put mpv's function back
 
-local real_warn = mp.msg.warn
 for name, list in pairs(handlers) do
     if #list > 0 then
-        if name == "helska-console-run" then
-            real_register(name, function(action)
-                local saved = real_warn
-                mp.msg.warn = function(m, ...)
-                    local parts = { m, ... }
-                    local text = table.concat(parts, " ")
-                    if not text:find("Unknown Helska Console action", 1, true) then
-                        saved(m, ...)
-                    end
-                end
-                for _, fn in ipairs(list) do pcall(fn, action) end
-                mp.msg.warn = saved
-            end)
-        else
-            real_register(name, function(...)
-                for _, fn in ipairs(list) do pcall(fn, ...) end
-            end)
-        end
+        real_register(name, function(...)
+            for _, fn in ipairs(list) do pcall(fn, ...) end
+        end)
     end
 end
 

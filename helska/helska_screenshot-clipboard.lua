@@ -31,7 +31,7 @@ local function helska_config_value(key)
 
     for line in file:lines() do
         local config_key, value =
-            line:match("^%s*([^#=%s][^=]-)%s*=%s*(.-)%s*$")
+            line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
 
         if config_key == key then
             result = value
@@ -282,7 +282,9 @@ mp.register_script_message("helska-console-run", function(action_name)
     if run then
         run()
     else
-        mp.msg.warn("Unknown Helska Console action: " .. tostring(action_name))
+        -- Every console action is broadcast to every module, so "not mine" is
+        -- the normal case, not a warning.
+        mp.msg.verbose("helska screenshot-clipboard: ignoring action " .. tostring(action_name))
     end
 end)
 

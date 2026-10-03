@@ -1,8 +1,8 @@
 --[[
     Helska Subtitle Font
 
-    Ctrl+J = subtitle font / size picker. The choice applies immediately and is
-    saved to helska.conf as subtitle_font=<family>.
+    Ctrl+J = subtitle font picker. The choice applies immediately and is saved
+    to helska.conf as subtitle_font=<family>.
 
     Font discovery: PowerShell (Windows), system_profiler (macOS), fc-list (Unix).
 --]]
@@ -33,7 +33,7 @@ local function read_helska_config()
 
     for line in file:lines() do
         local key, value =
-            line:match("^%s*([^#=%s][^=]-)%s*=%s*(.-)%s*$")
+            line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
         if key and value then
             values[key] = value
         end
@@ -52,7 +52,7 @@ local function write_helska_config_value(key, value)
     if file then
         for line in file:lines() do
             local existing =
-                line:match("^%s*([^#=%s][^=]-)%s*=")
+                line:match("^%s*([^#;=%s][^=]-)%s*=")
 
             if existing == key then
                 if not found then

@@ -7,7 +7,7 @@ nothing else to install.
 
 ## Download
 
-Get **`helskas-mpv-tools-1.0.0-full.zip`** from the
+Get **`helskas-mpv-tools-1.0.1-full.zip`** from the
 [Releases page](https://github.com/HELSKAA/helskas-mpv-tools/releases/latest).
 
 > Use the `-full` zip. GitHub also lists a "Source code" zip on every release —
@@ -37,7 +37,7 @@ on its tools, so you shouldn't see a SmartScreen prompt.
 | `Ctrl+.` / `Ctrl+,` | next / previous video in the folder |
 | `Ctrl+S` | copy a frame (with subtitles) to the clipboard |
 | `Ctrl+Shift+S` | copy a frame (without subtitles) |
-| `Ctrl+J` | subtitle font / size picker |
+| `Ctrl+J` | subtitle font picker |
 | `Ctrl+C` | copy the current subtitle text |
 | `Ctrl+A` | toggle auto-copy of every subtitle |
 

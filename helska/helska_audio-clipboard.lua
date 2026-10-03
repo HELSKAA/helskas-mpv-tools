@@ -206,7 +206,7 @@ local function read_shared_config()
 
     for line in file:lines() do
         local key, value =
-            line:match("^%s*([^#=%s][^=]-)%s*=%s*(.-)%s*$")
+            line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
 
         if key and value then
             values[key] = value
@@ -249,6 +249,7 @@ local function read_legacy_boost()
 end
 
 local function write_shared_value(key, value)
+    value = tostring(value or ""):gsub("[\r\n]", " ")
     local lines = {}
     local found = false
     local file = io.open(config_path, "r")
@@ -256,11 +257,14 @@ local function write_shared_value(key, value)
     if file then
         for line in file:lines() do
             local existing =
-                line:match("^%s*([^#=%s][^=]-)%s*=")
+                line:match("^%s*([^#;=%s][^=]-)%s*=")
 
             if existing == key then
-                lines[#lines + 1] = key .. "=" .. value
-                found = true
+                if not found then
+                    lines[#lines + 1] = key .. "=" .. value
+                    found = true
+                end
+                -- Drop duplicate active assignments for this setting.
             else
                 lines[#lines + 1] = line
             end
@@ -2454,7 +2458,9 @@ mp.register_script_message("helska-console-run", function(action_name)
     if run then
         run()
     else
-        mp.msg.warn("Unknown Helska Console action: " .. tostring(action_name))
+        -- Every console action is broadcast to every module, so "not mine" is
+        -- the normal case, not a warning.
+        mp.msg.verbose("helska audio-clipboard: ignoring action " .. tostring(action_name))
     end
 end)
 

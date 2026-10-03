@@ -1,0 +1,30 @@
+FFmpeg - license and written offer for source
+=============================================
+
+This bundle includes a prebuilt FFmpeg executable:
+
+    helska/ffmpeg/ffmpeg.exe
+    ffmpeg version 9.0.2-essentials_build-www.gyan.dev
+    configured with --enable-gpl --enable-version3
+
+It is the "essentials" build published by gyan.dev:
+    https://www.gyan.dev/ffmpeg/builds/
+
+Because that build enables GPL components, it is distributed under the GNU
+General Public License, version 3. The full license text is included in this
+zip as FFmpeg-COPYING.GPLv3.txt.
+
+Written offer for the corresponding source code
+-----------------------------------------------
+The complete corresponding source for this exact build is available from:
+
+    gyan.dev builds page : https://www.gyan.dev/ffmpeg/builds/
+    FFmpeg project       : https://ffmpeg.org/download.html
+
+If you cannot obtain it from the links above, open an issue at
+    https://github.com/HELSKAA/helskas-mpv-tools/issues
+and the source for this build will be provided.
+
+Alternatively, if you do not want to redistribute a GPL binary, delete the
+helska/ffmpeg/ folder and install FFmpeg yourself - the scripts fall back to
+whatever "ffmpeg" is on your PATH (an LGPL build also works).

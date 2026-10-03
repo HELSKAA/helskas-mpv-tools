@@ -117,7 +117,7 @@ local function read_config()
     if not f then return values end
 
     for line in f:lines() do
-        local key, value = line:match("^%s*([^#=%s][^=]-)%s*=%s*(.-)%s*$")
+        local key, value = line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
         if key and value then values[key] = value end
     end
     f:close()
@@ -125,16 +125,20 @@ local function read_config()
 end
 
 local function write_config_value(key, value)
+    value = tostring(value or ""):gsub("[\r\n]", " ")
     local lines = {}
     local found = false
     local f = io.open(CONFIG_PATH, "r")
 
     if f then
         for line in f:lines() do
-            local existing = line:match("^%s*([^#=%s][^=]-)%s*=")
+            local existing = line:match("^%s*([^#;=%s][^=]-)%s*=")
             if existing == key then
-                lines[#lines + 1] = key .. "=" .. value
-                found = true
+                if not found then
+                    lines[#lines + 1] = key .. "=" .. value
+                    found = true
+                end
+                -- Drop duplicate active assignments for this setting.
             else
                 lines[#lines + 1] = line
             end
@@ -168,7 +172,7 @@ local function delete_config_value(key)
 
     local lines = {}
     for line in f:lines() do
-        local existing = line:match("^%s*([^#=%s][^=]-)%s*=")
+        local existing = line:match("^%s*([^#;=%s][^=]-)%s*=")
         if existing ~= key then lines[#lines + 1] = line end
     end
     f:close()

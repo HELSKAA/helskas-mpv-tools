@@ -114,7 +114,7 @@ local function read_config_values()
     local f=io.open(CONFIG,"r")
     if not f then return out end
     for line in f:lines() do
-        local k,v=line:match("^%s*([^#=%s][^=]-)%s*=%s*(.-)%s*$")
+        local k,v=line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
         if k then out[k]=v end
     end
     f:close()
@@ -155,7 +155,7 @@ local function ensure_tone_defaults_in_config()
     end
     local present={}
     for _,line in ipairs(lines) do
-        local k=line:match("^%s*([^#=%s][^=]-)%s*=")
+        local k=line:match("^%s*([^#;=%s][^=]-)%s*=")
         if k then present[k]=true end
     end
     for i=1,5 do
@@ -196,11 +196,12 @@ local function rewrite_config(mutator)
 end
 
 local function set_config_value(key,value)
+    value = tostring(value or ""):gsub("[\r\n]", " ")
     return rewrite_config(function(lines)
         local result={}
         local replaced=false
         for _,line in ipairs(lines) do
-            local k=line:match("^%s*([^#=%s][^=]-)%s*=")
+            local k=line:match("^%s*([^#;=%s][^=]-)%s*=")
             if k==key then
                 if not replaced then
                     result[#result+1]=key.."="..value
@@ -219,7 +220,7 @@ local function remove_tone_color_overrides()
     return rewrite_config(function(lines)
         local result={}
         for _,line in ipairs(lines) do
-            local k=line:match("^%s*([^#=%s][^=]-)%s*=")
+            local k=line:match("^%s*([^#;=%s][^=]-)%s*=")
             if not (k and k:match("^tone_color_[1-5]$")) then
                 result[#result+1]=line
             end
@@ -341,7 +342,7 @@ local function read_binding(action,default_key)
     if not f then return default_key end
     local found=nil
     for line in f:lines() do
-        local k,v=line:match("^%s*([^#=%s][^=]-)%s*=%s*(.-)%s*$")
+        local k,v=line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
         if k=="bind."..action then found=v end
     end
     f:close()
@@ -1214,7 +1215,7 @@ local function write_working_palette()
         local result={}
         local written={}
         for _,line in ipairs(lines) do
-            local k=line:match("^%s*([^#=%s][^=]-)%s*=")
+            local k=line:match("^%s*([^#;=%s][^=]-)%s*=")
             local n=k and k:match("^tone_color_([1-5])$")
             if n then
                 n=tonumber(n)

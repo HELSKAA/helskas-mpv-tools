@@ -38,7 +38,7 @@ KEYS
   Ctrl+. / Ctrl+, . next / previous video in the folder
   Ctrl+S .......... copy a frame with subtitles
   Ctrl+Shift+S .... copy a frame without subtitles
-  Ctrl+J .......... subtitle font / size picker
+  Ctrl+J .......... subtitle font picker
   Ctrl+C .......... copy the current subtitle text
   Ctrl+A .......... toggle auto-copy of every subtitle
 
@@ -95,7 +95,7 @@ Screenshot -> clipboard
   Ctrl+S / Ctrl+Shift+S   copy the current frame with / without subtitles.
   No FFmpeg needed.
 
-Subtitle font / size (Ctrl+J)
+Subtitle font (Ctrl+J)
   Type to filter, arrows to move, ENTER to audition, Ctrl+V to paste a name.
   Changes apply immediately; save to keep them in helska.conf.
 

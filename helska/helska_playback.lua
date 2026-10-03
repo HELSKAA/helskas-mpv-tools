@@ -303,7 +303,7 @@ local function read_helska_binding(action_name)
 
     for line in file:lines() do
         local key, candidate =
-            line:match("^%s*([^#=%s][^=]-)%s*=%s*(.-)%s*$")
+            line:match("^%s*([^#;=%s][^=]-)%s*=%s*(.-)%s*$")
         if key == wanted then
             value = candidate
         end
