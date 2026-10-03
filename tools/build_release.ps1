@@ -52,15 +52,10 @@ Get-ChildItem $bundle -Recurse -Force | ForEach-Object {
     }
 }
 
-# Ship FFmpeg's GPLv3 license text + written source offer at the zip root.
-# The bundled FFmpeg build is GPLv3, so these must travel with it (see
-# THIRD-PARTY-NOTICES.md).
-$licenses = Join-Path $Root "licenses"
-if (Test-Path $licenses) {
-    Get-ChildItem $licenses -File | ForEach-Object {
-        Copy-Item $_.FullName (Join-Path $stage $_.Name) -Force
-    }
-}
+# FFmpeg's GPLv3 license text + written source offer live INSIDE helska/ffmpeg/
+# (next to the binary), so they ship with the component and the zip root stays
+# clean: just helska.lua + helska/. The bundle walk above already copies them;
+# nothing is placed at the zip root. (See THIRD-PARTY-NOTICES.md.)
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 $zip = Join-Path $OutDir ("helskas-mpv-tools-" + $Version + "-full.zip")

@@ -20,6 +20,8 @@ helska/temporary_files/*
 # README stays so the folder and its purpose are always visible in a checkout.
 helska/ffmpeg/*
 !helska/ffmpeg/README.txt
+!helska/ffmpeg/FFmpeg-COPYING.GPLv3.txt
+!helska/ffmpeg/FFmpeg-SOURCE-OFFER.txt
 
 # release artifacts (built by tools/build_release.ps1)
 dist/

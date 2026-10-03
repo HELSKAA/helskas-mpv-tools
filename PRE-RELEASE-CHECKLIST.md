@@ -50,5 +50,5 @@ every row; if any row fails, do not ship.
 ## Release integrity
 - [ ] Downloaded zip's `helska.lua` matches repo HEAD.
 - [ ] `python -m pytest tests -q` is green.
-- [ ] Zip root contains `FFmpeg-COPYING.GPLv3.txt` and `FFmpeg-SOURCE-OFFER.txt`.
+- [ ] `helska/ffmpeg/` contains `FFmpeg-COPYING.GPLv3.txt` and `FFmpeg-SOURCE-OFFER.txt`, and the zip root holds only `helska.lua` + `helska/`.
 - [ ] Every SHA-256 in `MANIFEST.txt` matches the shipped files.

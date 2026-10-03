@@ -10,7 +10,9 @@ All notable changes to Helska's MPV Tools are recorded here. The project uses
 - Unit tests for the tone-colour helper (`tests/test_tone_colors.py`) and a
   minimal CI workflow that runs them on Linux and Windows.
 - The release zip now carries FFmpeg's GPLv3 license text and a written source
-  offer (`FFmpeg-COPYING.GPLv3.txt`, `FFmpeg-SOURCE-OFFER.txt`).
+  offer (`FFmpeg-COPYING.GPLv3.txt`, `FFmpeg-SOURCE-OFFER.txt`) inside
+  `helska/ffmpeg/`, next to the binary; the zip root stays `helska.lua` +
+  `helska/`.
 
 ### Changed
 - Named the bundled FFmpeg build explicitly (gyan.dev "essentials" 9.0.2, GPLv3)

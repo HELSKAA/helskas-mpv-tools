@@ -40,7 +40,7 @@ helska/ffmpeg/ffmpeg.exe
   source  FFmpeg 9.0.2 "essentials" build, gyan.dev
           (https://www.gyan.dev/ffmpeg/builds/). Built with --enable-gpl
           --enable-version3, so it is distributed under GPLv3. The release
-          .zip ships the license text and a source offer at its root; see
+          .zip ships the license text and a source offer inside helska/ffmpeg/; see
           THIRD-PARTY-NOTICES.md.
 
 helska/OpenCC/bin/opencc.exe
@@ -82,6 +82,7 @@ LICENSES
 - OpenCC: helska/OpenCC/LICENSE.txt (Apache-2.0)
 - Python embeddable: helska/python/LICENSE.txt (PSF)
 - pypinyin: MIT (see helska/python/Lib/site-packages/pypinyin)
+- FFmpeg: GPLv3 - helska/ffmpeg/FFmpeg-COPYING.GPLv3.txt + helska/ffmpeg/FFmpeg-SOURCE-OFFER.txt
 - mpv scripts in this bundle: see the helska_*.lua file headers
 
 VERIFICATION: recompute any hash with

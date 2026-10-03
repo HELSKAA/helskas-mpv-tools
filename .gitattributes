@@ -21,3 +21,6 @@ tools/*.ps1                        text eol=crlf
 helska/OpenCC/**                   -text
 helska/python/**                   -text
 
+# FFmpeg license text + source offer: keep exactly as shipped (LF / CRLF).
+helska/ffmpeg/FFmpeg-COPYING.GPLv3.txt   -text
+helska/ffmpeg/FFmpeg-SOURCE-OFFER.txt    -text
