@@ -5,6 +5,9 @@ tone-coloured Chinese subtitles, subtitle and audio tools, screenshots, font and
 palette pickers. FFmpeg, OpenCC and a portable Python are bundled, so there is
 nothing else to install.
 
+<img width="1740" height="974" alt="example tone coloring" src="https://github.com/user-attachments/assets/098faa47-1f9d-471a-bd99-83fa486c41fc" />
+<img width="1740" height="974" alt="example console" src="https://github.com/user-attachments/assets/239fa6a8-dc35-4899-bf70-174d909e82ad" />
+
 ## Download
 
 Get **`helskas-mpv-tools-1.0.1-full.zip`** from the
