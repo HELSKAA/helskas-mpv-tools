@@ -1,14 +1,6 @@
 -- helska_playback.lua
--- Navigate naturally sorted video files in the current video's folder.
---
--- Default keybindings:
---   Ctrl+.  next video
---   Ctrl+,  previous video
---
--- Helska Console commands:
---   next
---   previous
---
+-- Play the next / previous video in the current video's folder.
+-- Keys: Ctrl+. (next), Ctrl+, (previous).
 -- External dependencies: none.
 
 local mp    = require "mp"
@@ -424,15 +416,13 @@ mp.register_script_message(
     install_main_bindings
 )
 
--- Also expose simple script-messages for use outside Helska Console.
 mp.register_script_message("next", open_next_video)
 mp.register_script_message("previous", open_previous_video)
 
 install_main_bindings()
 advertise_to_helska_console()
 
--- Cooperate with Helska Console: pause our next/previous hotkeys while the
--- console owns input. Fully independent when no console is present.
+-- Pause our next/previous hotkeys while the Console owns input.
 mp.register_script_message("helska-console-focus", function(state)
     if state == "on" then
         for _, action in pairs(ACTIONS) do

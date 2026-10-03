@@ -1,39 +1,21 @@
 --[[
     Helska Screenshot Clipboard
-    =============================
 
-    A cross-platform MPV script for quickly copying the current video
-    frame to the clipboard on Windows and macOS.
+    Ctrl+S        copy the current frame (with subtitles) to the clipboard
+    Ctrl+Shift+S  copy the current frame (without subtitles)
 
-    Hotkeys:
-      Ctrl+S         = Copy screenshot WITH subtitles
-      Ctrl+Shift+S   = Copy screenshot WITHOUT subtitles
+    The frame is written to helska/temporary_files/, copied, then deleted
+    again — the clipboard holds the image data. No FFmpeg needed.
 
-    Usage:
-      1. Press one of the screenshot hotkeys while watching a video.
-      2. The current frame is automatically copied to the clipboard.
-      3. Paste the image into any compatible application.
-
-    The screenshot is written to the bundle's own temporary_files folder
-    (scripts/helska/temporary_files) before being copied to the clipboard,
-    and is deleted again immediately afterwards - the clipboard holds the
-    image DATA, so the file is not needed once the copy has succeeded.
-
-    Dependencies:
-      Windows: PowerShell (bundled with Windows) is used to set the image
-               clipboard. FFmpeg is NOT required.
-      macOS:   osascript (built-in) is used to set the image clipboard.
---]]
+    Clipboard: PowerShell (Windows) / osascript (macOS).
+]]
 
 local mp = require "mp"
 local utils = require "mp.utils"
 
 
 ----------------------------------------------------------------------
--- OPTIONAL SHARED HELSKA CONFIG
---
--- The shared helska.conf is read when present. Missing bind.* entries use
--- built-in defaults, so the file itself is never required.
+-- SHARED CONFIG  (helska.conf; any missing entry uses its default)
 ----------------------------------------------------------------------
 
 local function helska_script_dir()
@@ -92,12 +74,6 @@ end
 
 ------------------------------------------------------------------------
 -- TEMPORARY FILES  (self-cleaning scratch folder)
---
--- This feature's short-lived working file goes into
---     scripts/helska/temporary_files/
--- under its original, human-friendly name. Only a file that sits INSIDE
--- that folder (and is not the README) is ever removed, so no unrelated file
--- anywhere else on the computer can ever be touched.
 ------------------------------------------------------------------------
 local SCRATCH = (function()
     local function norm(path)
@@ -244,8 +220,7 @@ mp.register_script_message("console-screenshot", screenshot_with_subtitles)
 mp.register_script_message("console-screenshot-clean", screenshot_clean)
 mp.register_script_message("console-reload-bindings", install_main_bindings)
 
--- Cooperate with Helska Console: pause our hotkeys while it owns input.
--- Fully independent when no console is present (handler simply never called).
+-- Pause our hotkeys while the Console owns input.
 mp.register_script_message("helska-console-focus", function(state)
     if state == "on" then
         mp.remove_key_binding("helska-screenshot-subs")
@@ -257,10 +232,7 @@ end)
 
 
 ----------------------------------------------------------------------
--- HELSKA CONSOLE COMPATIBILITY (v1)
---
--- This script owns its actions and key bindings. Helska Console only
--- discovers metadata and sends generic run/reload messages.
+-- HELSKA CONSOLE COMPATIBILITY
 ----------------------------------------------------------------------
 
 local HELSKA_CONSOLE_ACTIONS = {
@@ -285,8 +257,6 @@ local HELSKA_CONSOLE_ACTIONS = {
 local function advertise_to_helska_console()
     local owner = mp.get_script_name()
 
-    -- One batch replaces this owner's previous registration set without
-    -- intermediate menu redraws.
     mp.commandv("script-message", "helska-console-begin-owner", owner)
 
     for _, action in ipairs(HELSKA_CONSOLE_ACTIONS) do
@@ -324,6 +294,4 @@ end)
 
 mp.register_script_message("helska-console-reload-bindings", install_main_bindings)
 
--- Proactive registration handles either script load order. The console also
--- broadcasts discovery whenever it opens, so late/reloaded scripts recover.
 advertise_to_helska_console()

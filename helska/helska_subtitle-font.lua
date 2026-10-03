@@ -1,26 +1,10 @@
 --[[
     Helska Subtitle Font
-    ====================
 
-    A cross-platform mpv subtitle-font picker for Windows, macOS, and
-    fontconfig-based Unix systems.
+    Ctrl+J = subtitle font / size picker. The choice applies immediately and is
+    saved to helska.conf as subtitle_font=<family>.
 
-    Default hotkey:
-      Ctrl+J = Open the subtitle font menu
-
-    The chosen font is applied immediately and saved to the shared
-    helska.conf as:
-
-      subtitle_font=<font family>
-
-    The picker is fully standalone and can create helska.conf itself. Helska
-    Console compatibility is optional: when the console is installed, it can
-    also run this action and manage the launcher's keybind.
-
-    Dependencies (font discovery):
-      Windows: PowerShell (bundled with Windows).
-      macOS:   system_profiler (built-in).
-      Unix:    fc-list (fontconfig), if present.
+    Font discovery: PowerShell (Windows), system_profiler (macOS), fc-list (Unix).
 --]]
 
 local mp = require "mp"
@@ -897,9 +881,7 @@ end
 
 install_main_binding()
 
--- Cooperate with Helska Console: while it owns input, pause our open-menu
--- binding and drop the picker's modal section so its keys cannot fire either.
--- Fully independent when no console is present (handler simply never called).
+-- Pause the open-menu key (and close the picker) while the Console owns input.
 mp.register_script_message("helska-console-focus", function(state)
     if state == "on" then
         mp.remove_key_binding("helska-subtitle-font-open")
@@ -910,7 +892,7 @@ mp.register_script_message("helska-console-focus", function(state)
 end)
 
 ----------------------------------------------------------------------
--- HELSKA CONSOLE COMPATIBILITY (v1)
+-- HELSKA CONSOLE COMPATIBILITY
 ----------------------------------------------------------------------
 
 local HELSKA_CONSOLE_ACTIONS = {

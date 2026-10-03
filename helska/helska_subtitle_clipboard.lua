@@ -1,28 +1,16 @@
 --[[
     Helska Subtitle Clipboard
-    =========================
 
-    Copies the currently displayed subtitle text to the clipboard.
+    Ctrl+C = copy the current subtitle text
+    Ctrl+A = toggle auto-copy of every new subtitle
 
-    Default hotkeys:
-      Ctrl+C = copy the current subtitle
-      Ctrl+A = toggle auto-copying each newly displayed subtitle
-
-    Clipboard: uses mpv's built-in "clipboard/text" feature.
-    No external tools (PowerShell, FFmpeg, etc.) are required.
-
-    The shared helska.conf is read when present:
-      bind.subtitle-clipboard=Ctrl+C
-      bind.subtitle-clipboard-auto=Ctrl+A
---]]
+    Uses mpv's built-in clipboard/text, so no external tools are needed.
+]]
 
 local mp = require("mp")
 local utils = require("mp.utils")
 ----------------------------------------------------------------------
--- OPTIONAL SHARED HELSKA CONFIG
---
--- The shared helska.conf is read when present. Missing bind.* entries use
--- built-in defaults, so the file itself is never required.
+-- SHARED CONFIG  (helska.conf; any missing entry uses its default)
 ----------------------------------------------------------------------
 
 local function helska_script_dir()
@@ -66,12 +54,7 @@ end
 
 
 ----------------------------------------------------------------------
--- Subtitle Clipboard
---
--- Ctrl+C   Copy current subtitle
--- Ctrl+A   Toggle automatic subtitle copying
---
--- Requires mpv 0.41+
+-- BINDINGS  (Ctrl+C copy, Ctrl+A toggle auto-copy; needs mpv 0.41+)
 ----------------------------------------------------------------------
 
 local autocopy = false
@@ -269,8 +252,7 @@ mp.register_script_message("console-subtitle-copy", copy_current_subtitle)
 mp.register_script_message("console-subtitle-auto", toggle_autocopy)
 mp.register_script_message("console-reload-bindings", install_main_bindings)
 
--- Cooperate with Helska Console: pause our hotkeys while it owns input.
--- Fully independent when no console is present (handler simply never called).
+-- Pause our hotkeys while the Console owns input.
 mp.register_script_message("helska-console-focus", function(state)
     if state == "on" then
         mp.remove_key_binding("helska-copy-subtitle")
@@ -282,10 +264,7 @@ end)
 
 
 ----------------------------------------------------------------------
--- HELSKA CONSOLE COMPATIBILITY (v1)
---
--- This script owns its actions and key bindings. Helska Console only
--- discovers metadata and sends generic run/reload messages.
+-- HELSKA CONSOLE COMPATIBILITY
 ----------------------------------------------------------------------
 
 local HELSKA_CONSOLE_ACTIONS = {
@@ -310,8 +289,6 @@ local HELSKA_CONSOLE_ACTIONS = {
 local function advertise_to_helska_console()
     local owner = mp.get_script_name()
 
-    -- One batch replaces this owner's previous registration set without
-    -- intermediate menu redraws.
     mp.commandv("script-message", "helska-console-begin-owner", owner)
 
     for _, action in ipairs(HELSKA_CONSOLE_ACTIONS) do
@@ -349,6 +326,4 @@ end)
 
 mp.register_script_message("helska-console-reload-bindings", install_main_bindings)
 
--- Proactive registration handles either script load order. The console also
--- broadcasts discovery whenever it opens, so late/reloaded scripts recover.
 advertise_to_helska_console()

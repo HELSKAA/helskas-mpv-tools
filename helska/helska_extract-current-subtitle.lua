@@ -1,19 +1,11 @@
 --[[
     Extract Current Subtitle
-    ------------------------
 
-    Extracts the currently selected primary subtitle track to an external file
-    beside the currently playing video.
+    Ctrl+Shift+X = save the current subtitle track to a file beside the video.
+    The Console also offers "preload-subs", which loads the track without
+    saving it.
 
-    Default key:
-      Ctrl+Shift+X
-
-    Shared helska.conf override:
-      bind.extract-subtitle=Ctrl+Shift+X
-
-    FFmpeg:
-      Windows: ffmpeg.exe may be on PATH or at helska/ffmpeg/ffmpeg.exe
-      macOS/Linux: ffmpeg may be on PATH or at helska/ffmpeg/ffmpeg
+    FFmpeg: ffmpeg.exe on PATH or helska/ffmpeg/ffmpeg(.exe).
 ]]
 
 local mp = require("mp")
@@ -33,11 +25,8 @@ local config_path = utils.join_path(script_dir, "helska.conf")
 ------------------------------------------------------------------------
 -- TEMPORARY FILES  (self-cleaning scratch folder)
 --
--- The "preload-subs" working file goes into
---     scripts/helska/temporary_files/
--- under its original, human-friendly name. Only a file that sits INSIDE
--- that folder (and is not the README) is ever removed, so no unrelated file
--- anywhere else on the computer can ever be touched.
+-- The "preload-subs" working file goes into scripts/helska/temporary_files/.
+-- Only files inside that folder (never the README) are ever removed.
 ------------------------------------------------------------------------
 local SCRATCH = (function()
     local function norm(path)
@@ -103,8 +92,7 @@ local function get_config_value(key)
 end
 
 local function reload_binding()
-    -- Primary command. This one ships with a default key, so a missing or empty
-    -- helska.conf entry falls back to DEFAULT_KEY.
+    -- Has a default key: a missing/empty helska.conf entry falls back to it.
     if bound_key then
         mp.remove_key_binding("helska-extract-subtitle")
         bound_key = nil
@@ -362,8 +350,7 @@ mp.register_event("shutdown", cleanup_temporary_files)
 reload_binding()
 advertise()
 
--- Cooperate with Helska Console: pause our hotkey while it owns input.
--- Fully independent when no console is present (handler simply never called).
+-- Pause our hotkey while the Console owns input.
 mp.register_script_message("helska-console-focus", function(state)
     if state == "on" then
         mp.remove_key_binding("helska-extract-subtitle")

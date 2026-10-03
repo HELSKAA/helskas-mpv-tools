@@ -2,52 +2,16 @@
     Helska Audio Clipboard
     ======================
 
-    An MPV script for quickly extracting audio clips and copying the resulting
-    MP3 files directly to the clipboard on Windows and macOS.
+    Ctrl+E        copy the current subtitle's audio to the clipboard (MP3)
+    Ctrl+Shift+E  manual clip: 1st press = start, 2nd press = end
+    Alt+E         audio-boost menu (gain applied to extracted clips only)
 
-    Quick Clip:
-      Ctrl+E
-        Extract the audio belonging to the subtitle currently on screen
-        and copy the MP3 file to the clipboard.
+    While marking a manual clip: Left/Right = 0.1s, Shift+Left/Right = 0.5s,
+    Ctrl+Left/Right = nearest subtitle start, Alt+Left/Right = nearest end,
+    Esc = cancel.
 
-    Manual Clip:
-      Ctrl+Shift+E
-        First press  = Set START
-        Second press = Set END, extract audio, and copy it to clipboard
-
-      While selecting:
-        Left / Right           = Adjust by 0.1 sec
-        Shift+Left / Right     = Adjust by 0.5 sec
-        Ctrl+Left / Right      = Jump to nearest subtitle START
-        Alt+Left / Right       = Jump to nearest subtitle END
-        Esc                    = Cancel
-
-    Audio Boost:
-      Alt+E
-        Opens the Audio Boost menu.
-
-      Audio Boost affects extracted audio only.
-      It does not change MPV playback volume.
-
-      If Audio Boost is changed and saved, the script automatically
-      creates:
-          helska.conf
-
-      The saved boost is remembered between MPV sessions.
-
-    FFmpeg:
-      Windows first looks for:
-          helska/ffmpeg/ffmpeg.exe
-
-      macOS first looks for:
-          helska/ffmpeg/ffmpeg
-
-      If a bundled executable is not found, the script falls back to
-      FFmpeg from PATH.
-
-    Clipboard:
-      Windows: PowerShell (bundled) sets the file clipboard
-      macOS:   osascript (/usr/bin/osascript) sets the file clipboard
+    FFmpeg: helska/ffmpeg/ffmpeg(.exe), else whatever is on PATH.
+    Clipboard: PowerShell (Windows) / osascript (macOS).
 --]]
 
 local mp = require("mp")
@@ -75,12 +39,9 @@ end
 ------------------------------------------------------------------------
 -- TEMPORARY FILES  (self-cleaning scratch folder)
 --
--- The extracted MP3 goes into
---     scripts/helska/temporary_files/
--- under its original, human-friendly name, so the file you paste keeps the
---   <video>_<start>-<end>_<hash>.mp3 naming. Only a file that sits INSIDE
--- that folder (and is not the README) is ever removed, so no unrelated file
--- anywhere else on the computer can ever be touched.
+-- The extracted MP3 goes into scripts/helska/temporary_files/ under its
+-- original <video>_<start>-<end>_<hash>.mp3 name. Only files inside that
+-- folder (never the README) are ever removed.
 ------------------------------------------------------------------------
 local SCRATCH = (function()
     local function norm(path)
@@ -2542,12 +2503,9 @@ end
 
 install_main_bindings()
 
--- Cooperate with Helska Console: pause every hotkey this script owns while the
--- console owns input. Besides the three main clip/boost hotkeys, its manual
--- sync mode and audio-boost menu both force-bind LEFT/RIGHT/Shift+LEFT/etc.,
--- which would otherwise defeat the console's arrow-key navigation. Only the
--- bindings are removed here (never any state), and on "off" each active mode
--- re-registers exactly what it had. Fully independent without a console.
+-- Pause this script's hotkeys while the Console owns input (its manual-sync
+-- and boost menus force-bind the arrow keys, which would clash). Binding state
+-- is untouched and restored on "off".
 local function remove_audio_hotkeys()
     mp.remove_key_binding("helska-subtitle-audio-to-clipboard")
     mp.remove_key_binding("helska-manual-audio-clip")
@@ -2631,7 +2589,7 @@ mp.register_script_message("console-reload-bindings", install_main_bindings)
 
 
 ----------------------------------------------------------------------
--- HELSKA CONSOLE COMPATIBILITY (v1)
+-- HELSKA CONSOLE COMPATIBILITY
 --
 -- This script owns its actions and key bindings. Helska Console only
 -- discovers metadata and sends generic run/reload messages.
@@ -2667,8 +2625,6 @@ local HELSKA_CONSOLE_ACTIONS = {
 local function advertise_to_helska_console()
     local owner = mp.get_script_name()
 
-    -- One batch replaces this owner's previous registration set without
-    -- intermediate menu redraws.
     mp.commandv("script-message", "helska-console-begin-owner", owner)
 
     for _, action in ipairs(HELSKA_CONSOLE_ACTIONS) do
@@ -2707,6 +2663,4 @@ end)
 
 mp.register_script_message("helska-console-reload-bindings", install_main_bindings)
 
--- Proactive registration handles either script load order. The console also
--- broadcasts discovery whenever it opens, so late/reloaded scripts recover.
 advertise_to_helska_console()

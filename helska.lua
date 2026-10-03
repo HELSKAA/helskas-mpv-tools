@@ -1,30 +1,14 @@
 --[[ helska.lua
-  Loader for the "helska" bundle of Lua scripts.
+  Loader for the "helska" script bundle.
 
-  INSTALL (Windows):
-    1. Copy this file  AND  the "helska" folder together into mpv's
-       scripts/ directory (the folder that already contains input.conf).
-    2. Start / restart mpv. That's it.
+  mpv only auto-runs .lua files that sit directly in scripts/, so this file
+  loads everything inside the helska/ folder instead (helska_console.lua first,
+  the rest in sorted order). Add or delete a .lua there to add or remove a
+  feature; no list to edit.
 
-  WHY THIS FILE EXISTS -------------------------------------------------------
-  mpv only auto-runs *.lua that sit directly in scripts/ (it never recurses
-  into subfolders). Everything in the helska/ folder is kept together (so it
-  can be added/removed as one unit and can carry its own bundled tools), and
-  this single file takes over loading them.
-
-  mpv gives each auto-loaded .lua its own Lua context, so normally no two
-  scripts ever fight. But because this loader pulls every helska script into
-  ONE Lua context, several scripts would clobber each other when they all
-  register the same Helska Console messages. The loader handles that here:
-  it keeps the feature scripts byte-for-byte unchanged (they still run fine
-  standalone) and just routes the shared messages to every interested module.
-
-  DISCOVERY --------------------------------------------------------------
-  Every *.lua file found inside the helska/ folder is loaded automatically
-  (helska_console.lua first, the rest in sorted order). A user can therefore
-  drop their OWN Console-compatible script into helska/ and it is picked up
-  with no edit to this file, while deleting a file simply disables it.
-----------------------------------------------------------------------------]]
+  All of them share one Lua context, so the console messages that several
+  modules register are routed here to avoid clobbering each other.
+]]
 
 local mp = require "mp"
 local utils = require "mp.utils"
@@ -206,9 +190,7 @@ for name, list in pairs(handlers) do
     end
 end
 
--- The load-time advertise of each module already accumulated cleanly (the
--- shared end-owner above no longer prunes). A final discover re-advertises
--- everything through the just-installed routers, so even the FIRST TAB open
+-- Re-advertise through the routers just installed, so the first TAB open
 -- already shows the full menu.
 mp.commandv("script-message", "helska-console-discover")
 
@@ -248,66 +230,28 @@ windows_unblock_once()
 -- ---------------------------------------------------------------------------
 -- 7) Self-cleaning scratch folder: scripts/helska/temporary_files
 --
---    Features that need a short-lived working file write it HERE instead of
---    scattering files across the operating system's temporary directory. This
---    keeps every byte the bundle creates in ONE known place, which is exactly
---    what makes safe auto-deletion possible: only a file that sits INSIDE this
---    folder (and is not the README) is ever removed, so no unrelated file
---    anywhere else on the machine can ever be touched.
---
---    Files keep their original, human-friendly names (for example the pasted
---    audio clip stays "<video>_<start>-<end>_<hash>.mp3"), so what you paste is
---    never decorated with an internal prefix. The tracks that ARE visible in
---    mpv's list are named to read clearly there too (for example the generated
---    tone track is "Tone colors (sub 2).ass").
---
---    On startup the folder is created if missing (together with a README that
---    explains it) and a conservative sweep removes leftovers from a previous
---    run. The sweep runs once at startup and again whenever a file is loaded.
---    A leftover is only deleted when it is NOT still on the clipboard, NOT
---    loaded as a track in this mpv, and (when its name still records the owning
---    mpv process id) that process is no longer running - so an in-flight paste
---    or a track on screen is never broken. Each run also writes a tiny
---    ".helska-session-<pid>" marker so a second mpv window never deletes the
---    first window's files. The sweep does nothing when there are no leftovers.
+--    Short-lived working files go here so the bundle only ever deletes files
+--    inside its own folder (never the README). A leftover is removed only when
+--    it is not on the clipboard and not loaded as a track.
 -- ---------------------------------------------------------------------------
 local SCRATCH_DIR = utils.join_path(BUNDLE, "temporary_files")
 
-local SCRATCH_README = [[HELSKA - temporary_files
-========================
+local SCRATCH_README = [[HELSKA'S MPV TOOLS - temporary_files
+====================================
 
-This folder is the helska bundle's own scratch space.
+This is the bundle's scratch folder. Features write their short-lived working
+files here and delete them automatically: screenshots (Ctrl+S / Ctrl+Shift+S),
+extracted audio clips (Ctrl+E / Ctrl+Shift+E), and the Chinese tone-colour /
+conversion / preload subtitle tracks.
 
-Every feature that has to write a short-lived working file writes it HERE
-instead of scattering files across the operating system's temporary folder.
-Files appear and remove themselves automatically as you use the features:
+Only files inside this folder are ever removed, never this README, so nothing
+else on your computer is ever touched. You can empty this folder at any time.
 
-  * Screenshots (Ctrl+S / Ctrl+Shift+S) are written here, placed on the
-    clipboard, and then deleted again immediately.
-  * Extracted audio clips (Ctrl+E / Ctrl+Shift+E) are written here and kept
-    only until the clipboard stops pointing at them (so you can still paste
-    the file), then deleted automatically.
-  * The Chinese tone-colour / Hanzi-conversion tracks and the "preload-subs"
-    track use short-lived files here that are removed when the track is
-    switched off or mpv closes. Because these ARE shown in mpv's track list,
-    they are named to read clearly there, e.g. "Tone colors (sub 2).ass" or
-    "Preloaded subs (sub 2).srt".
+The ".helska-session-<pid>" entries are tiny markers that tell a second mpv
+window which files are still in use; they disappear when that mpv closes.
 
-Only files inside this folder are ever removed, and never this README, so
-nothing else on your computer is ever touched. Files keep their normal,
-friendly names - for example an extracted audio clip is named like
-"<video>_<start>-<end>_<hash>.mp3", exactly as it appears when you paste it.
-
-This README is permanent and is never deleted. You can safely empty this
-folder at any time; the next action simply creates a fresh file.
-
-The ".helska-session-<pid>" entries are not junk: they are tiny one-line
-markers that tell a second mpv window which files are still in use, and they
-vanish when that mpv closes. Fine to leave them alone.
-
-If you ever see a working file left behind, it only means mpv was force-quit
-before the cleanup could run - it is removed on the next launch, and deleting
-it yourself is always safe.
+A file left behind just means mpv was force-quit before cleanup ran: it is
+removed on the next launch, and deleting it yourself is always safe.
 ]]
 
 local function scratch_norm(path)
@@ -382,10 +326,8 @@ local function alive_pids(pids)
     local list = table.concat(pids, ",")
     local args
     if package.config:sub(1, 1) == "\\" then
-        -- The trailing "; exit 0" is essential. Get-Process exits non-zero as
-        -- soon as ANY requested pid is missing, so a list that still contains
-        -- one dead pid used to look like a FAILED probe and aborted the whole
-        -- sweep - which is exactly why leftovers were never cleaned up.
+        -- "; exit 0" is required: Get-Process returns non-zero as soon as any
+        -- requested pid is missing, which would look like a failed probe.
         args = { "powershell", "-NoProfile", "-Command",
             "Get-Process -Id " .. list ..
             " -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id; exit 0" }
@@ -537,10 +479,8 @@ local function scratch_sweep()
     end
     if #candidates == 0 then return end
 
-    -- Fast path: a candidate already loaded as a track in THIS mpv (the tone
-    -- -colour or preload file currently on screen, for example) is safe by
-    -- definition. When every candidate is safe there is nothing to probe, so
-    -- the common case costs nothing and never spawns a subprocess.
+    -- Fast path: a file already loaded as a track here is safe, so the common
+    -- case never spawns a subprocess.
     local loaded = loaded_track_sets()
     local need_probe = false
     for _, item in ipairs(candidates) do
@@ -553,9 +493,7 @@ local function scratch_sweep()
     end
     if not need_probe then return end
 
-    -- The clipboard probe is asynchronous, so the deletion decision happens in
-    -- its callback. The pid liveness probe (rare: only leftover internal files
-    -- carry one) stays synchronous and cheap.
+    -- The clipboard probe is async, so deletion happens in its callback.
     sweep_busy = true
     local onclip = {}
     local clip_ok = false
@@ -565,8 +503,8 @@ local function scratch_sweep()
         onclip, clip_ok = set, ok
         sweep_busy = false
 
-        -- Be conservative: with no clipboard answer we cannot know what an
-        -- in-flight paste still needs, so delete nothing this round.
+        -- With no clipboard answer we can't know what an in-flight paste still
+        -- needs, so delete nothing this round.
         if not clip_ok then return end
 
         local removed = 0
@@ -577,12 +515,11 @@ local function scratch_sweep()
                 or loaded.base[item.name:lower()]
             if not keep then
                 if item.pid then
-                    -- Only delete once its owner is provably gone. If the
-                    -- liveness probe failed this round, keep it (conservative).
+                    -- Delete only once its owner is gone; keep it if the probe
+                    -- failed this round.
                     keep = not (alive_ok and not alive[item.pid])
                 else
-                    -- No owner recorded: safe only when no other mpv is running,
-                    -- otherwise the file may belong to that other window.
+                    -- No owner recorded: keep unless no other mpv is running.
                     keep = others_alive
                 end
             end

@@ -2,28 +2,12 @@
     Helska Console
     ==============
 
-    Compact, modular command browser for helska-compatible mpv scripts.
+    The menu of every action in the bundle. TAB opens it.
 
-    External dependencies: none - uses mpv built-ins only.
-    Configuration is read from helska.conf beside this script.
-
-    Architecture:
-      * Script actions live only in the dynamic registry.
-      * Console-native actions live only in the UI layer.
-      * Binding operations are command-line contexts with completion views.
-      * Bulk actions ("all") exist only in unbind/defaultbind contexts.
-      * The list is windowed/scrollable, so UI size is independent of how
-        many scripts or actions are registered.
-
-    Compatible scripts use Helska Console protocol v1:
-      helska-console-discover
-      helska-console-begin-owner <owner>
-      helska-console-register <owner> <group> <command> <default-key>
-                              <description> <group-order> <action-order>
-      helska-console-end-owner <owner>
-      helska-console-run <command>
-      helska-console-reload-bindings
---]]
+    Console-compatible scripts advertise themselves over a small message
+    protocol: helska-console-discover / -run / -reload-bindings, and
+    helska-console-begin-owner / -register / -end-owner. See FEATURES.txt.
+]]
 
 local mp = require("mp")
 local utils = require("mp.utils")

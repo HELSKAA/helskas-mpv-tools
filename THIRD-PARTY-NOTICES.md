@@ -18,13 +18,15 @@ than GitHub's 100 MiB per-file limit. The download-ready bundle on the
 **Releases** page does include an FFmpeg build, so the audio-clip and
 subtitle-extraction features work out of the box.
 
-FFmpeg is licensed separately from Helska's MPV Tools. Most prebuilt Windows
-binaries (for example the gyan.dev and BtbN builds) are under the **GPL**
-(some builds under the **LGPL**). If you redistribute this bundle, keep
+FFmpeg is licensed separately from Helska's MPV Tools, and the license depends
+on the build: most prebuilt Windows binaries (gyan.dev, BtbN) are under the
+**GPL**, some under the **LGPL**. If you redistribute this bundle, keep
 FFmpeg's own license and copyright notices intact and comply with the terms of
-the build you ship. If that is a concern, simply delete `helska/ffmpeg/` from
-your copy and install FFmpeg yourself - the scripts fall back to whatever
-`ffmpeg` is on your `PATH`.
+the build you ship. If you are not sure which build is included, or GPL
+redistribution is a concern, delete `helska/ffmpeg/` and install FFmpeg
+yourself - the scripts fall back to whatever `ffmpeg` is on your `PATH`.
+
+FFmpeg license text and corresponding source: https://ffmpeg.org/legal.html
 
 ## pypinyin (MIT)
 

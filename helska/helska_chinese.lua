@@ -1,26 +1,13 @@
 -- helska_chinese.lua
--- Unified Chinese subtitle tools for mpv.
+-- Chinese subtitle tools: Mandarin tone colouring and Simplified/Traditional
+-- conversion. The original subtitle is never changed in place; at most one
+-- generated subtitle track is kept.
 --
--- Commands:
---   tones            Toggle automatic Mandarin tone coloring.
---   hanzi-convert    Toggle the ORIGINAL subtitle between its original script
---                    and one auto-detected Simplified/Traditional conversion.
---
--- Core rule: the original subtitle track is never transformed in-place and
--- This script owns at most ONE generated temporary subtitle track.
--- Every rebuild starts from the untouched original source.
---
--- Dependencies and where this script looks for them:
---   1. Python 3 + pypinyin  (tone coloring)
---        Windows:   helska/python/python.exe, else "python" or "py" on PATH
---        macOS/Linux: helska/python/bin/python3, else "python3" or "python" on PATH
---      The chosen interpreter must have pypinyin importable.
---   2. OpenCC  (Hanzi conversion)
---        helska/OpenCC/bin/opencc[.exe] bundled, else "opencc[.exe]" on PATH
---        dictionary data: helska/OpenCC/share/opencc/<config>.json
---   3. FFmpeg  (embedded SRT/ASS preload only)
---        helska/ffmpeg/ffmpeg[.exe] bundled, else "ffmpeg" on PATH
---   4. helska_tone_colors.py must sit beside this .lua file.
+-- Tools, bundled under helska/ and falling back to PATH:
+--   python (+ pypinyin)  tone colouring
+--   OpenCC               Hanzi conversion
+--   ffmpeg               embedded-subtitle preload
+-- helska_tone_colors.py must sit beside this file.
 
 local mp = require "mp"
 local utils = require "mp.utils"
@@ -74,12 +61,6 @@ local CONFIG = utils.join_path(SCRIPT_DIR, "helska.conf")
 
 ------------------------------------------------------------------------
 -- TEMPORARY FILES  (self-cleaning scratch folder)
---
--- Every short-lived working file this feature writes goes into
---     scripts/helska/temporary_files/
--- under its original, human-friendly name. Only a file that sits INSIDE
--- that folder (and is not the README) is ever removed, so no unrelated file
--- anywhere else on the computer can ever be touched.
 ------------------------------------------------------------------------
 local SCRATCH = (function()
     local function norm(path)
@@ -428,11 +409,9 @@ local function current_track()
     end
 end
 
--- True when a subtitle track is actually selected/on screen. current_track()
--- only resolves a concrete sid, so this also recognizes an auto-selected track
--- (sid="auto" has no numeric id but its track-list entry still has selected=true).
--- Used to refuse enabling tone colors / Hanzi conversion with no subtitle to
--- process, instead of silently falling through to a misleading ON/OFF toast.
+-- True when a subtitle track is selected/on screen (current_track() only
+-- resolves a concrete sid, so an auto-selected track is checked too). Used to
+-- refuse enabling with no subtitle, instead of a misleading ON/OFF toast.
 local function has_selected_subtitle()
     if current_track() then return true end
     local tracks=mp.get_property_native("track-list") or {}
@@ -700,9 +679,7 @@ local function build_tones_external(input_path,cleanup_input)
                     tostring(result.stdout).." stderr="..tostring(result.stderr))
                 attempt(i+1); return
             end
-            -- Name the interpreter that actually worked. Without this the first
-            -- successful candidate is invisible, which previously hid a broken
-            -- bundled-path that always fell through to a system Python.
+            -- Log which interpreter actually worked.
             mp.msg.verbose("helska chinese: tone colors built by python '"..tostring(py).."'")
             if cleanup_input then
                 SCRATCH.remove(input_path)
@@ -1591,9 +1568,7 @@ end)
 install_binding()
 advertise()
 
--- Cooperate with Helska Console: pause our own hotkeys (tones, hanzi convert,
--- tone-color menu) while the console owns input. Fully independent when no
--- console is present (the handler is simply never called).
+-- Pause our hotkeys while the Console owns input.
 mp.register_script_message("helska-console-focus", function(state)
     if state == "on" then
         mp.remove_key_binding(BINDING_NAME)
