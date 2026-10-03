@@ -1267,10 +1267,10 @@ local function open_config_file()
         end
     end
     mp.command_native_async({
-        name="subprocess",playback_only=false,capture_stdout=true,capture_stderr=true,
+        name="subprocess",playback_only=false,detach=true,
         args=args,
-    },function(success,result)
-        if not success or not result or result.status~=0 then
+    },function(success)
+        if not success then
             show_status("TONE COLORS","Could not open helska.conf",true,3)
         end
     end)
