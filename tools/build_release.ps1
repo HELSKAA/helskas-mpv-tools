@@ -53,7 +53,7 @@ Get-ChildItem $bundle -Recurse -Force | ForEach-Object {
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-$zip = Join-Path $OutDir ("helskas-mpv-tools-" + $Version + ".zip")
+$zip = Join-Path $OutDir ("helskas-mpv-tools-" + $Version + "-full.zip")
 if (Test-Path $zip) { Remove-Item $zip -Force }
 
 # NOTE: Windows PowerShell 5.1's Compress-Archive writes entry names with

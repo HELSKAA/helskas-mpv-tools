@@ -1,9 +1,14 @@
 # Helska's MPV Tools — an mpv script bundle (Windows)
 
 > **⬇ Install in two steps (Windows).** Open the **Releases** page of this
-> repository and download **`helskas-mpv-tools-<version>.zip`**, then extract it into
-> mpv's `scripts/` folder and restart mpv. That zip is fully self-contained
-> (FFmpeg + OpenCC + portable Python included) — no extra downloads.
+> repository and grab **`helskas-mpv-tools-<version>-full.zip`** — the release
+> asset that is fully self-contained (FFmpeg + OpenCC + portable Python
+> included). The **Source code** `.zip` / `.tar.gz` GitHub auto-adds to every
+> release are *not* an installer (they hold the source, no ffmpeg) — download
+> the **`-full`** zip only, and restart mpv afterwards.
+>
+> Direct link:
+> `https://github.com/HELSKAA/helskas-mpv-tools/releases/latest/download/helskas-mpv-tools-1.0.0-full.zip`
 >
 > Cloning the repository instead? Everything is here **except the FFmpeg
 > binary** (it is larger than GitHub's 100 MiB per-file limit) — see
