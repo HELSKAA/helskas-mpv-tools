@@ -17,9 +17,7 @@
 local mp = require("mp")
 local utils = require("mp.utils")
 
-------------------------------------------------------------
 -- PLATFORM + TEMP DIRECTORY
-------------------------------------------------------------
 
 local path_separator = package.config:sub(1, 1)
 local is_windows = path_separator == "\\"
@@ -36,13 +34,10 @@ if not is_windows then
     end
 end
 
-------------------------------------------------------------------------
--- TEMPORARY FILES  (self-cleaning scratch folder)
+-- TEMPORARY FILES
 --
--- The extracted MP3 goes into scripts/helska/temporary_files/ under its
--- original <video>_<start>-<end>_<hash>.mp3 name. Only files inside that
--- folder (never the README) are ever removed.
-------------------------------------------------------------------------
+-- The extracted MP3 goes into scripts/helska/temporary_files/ and is removed
+-- automatically once the clipboard no longer points at it.
 local SCRATCH = (function()
     local function norm(path)
         local n = tostring(path):gsub("\\", "/")
@@ -78,9 +73,7 @@ local SCRATCH = (function()
     return api
 end)()
 
-------------------------------------------------------------
 -- SETTINGS
-------------------------------------------------------------
 
 local padding_before = 0.10
 local padding_after  = 0.15
@@ -95,9 +88,7 @@ local default_audio_boost_db = 0.0
 local min_audio_boost_db = -40.0
 local max_audio_boost_db = 20.0
 
-------------------------------------------------------------
 -- SCRIPT PATHS
-------------------------------------------------------------
 
 local script_path =
     debug.getinfo(1, "S").source:sub(2)
@@ -117,9 +108,7 @@ local legacy_config_path =
         "helska_audio-clipboard.conf"
     )
 
-------------------------------------------------------------
 -- STATE
-------------------------------------------------------------
 
 local manual_start = nil
 local manual_active = false
@@ -131,9 +120,7 @@ local boost_original_db = nil
 local audio_boost_db =
     default_audio_boost_db
 
-------------------------------------------------------------
 -- GENERAL HELPERS
-------------------------------------------------------------
 
 local function round_to_half(value)
     return math.floor(value * 2 + 0.5) / 2
@@ -152,9 +139,7 @@ local function clamp(value, minimum, maximum)
     return value
 end
 
-------------------------------------------------------------
 -- AUDIO BOOST HELPERS
-------------------------------------------------------------
 
 local function db_to_percent(db)
 
@@ -211,9 +196,7 @@ local function format_boost_percent(db)
     end
 end
 
-------------------------------------------------------------
 -- OPTIONAL SHARED HELSKA CONFIG
-------------------------------------------------------------
 
 local function read_shared_config()
     local values = {}
@@ -343,9 +326,7 @@ end
 
 load_config()
 
-------------------------------------------------------------
 -- FIND FFMPEG
-------------------------------------------------------------
 
 local function file_exists(path)
     local file = io.open(path, "rb")
@@ -377,8 +358,7 @@ local function find_ffmpeg()
     end
 
     if is_macos then
-        -- GUI-launched mpv may not inherit the same PATH as Terminal.
-        -- Check the common Homebrew locations explicitly before PATH.
+        -- GUI-launched mpv may not inherit PATH; check Homebrew paths first.
         local mac_candidates = {
             "/opt/homebrew/bin/ffmpeg",
             "/usr/local/bin/ffmpeg"
@@ -394,9 +374,7 @@ local function find_ffmpeg()
     return "ffmpeg"
 end
 
-------------------------------------------------------------
 -- FILENAME HELPERS
-------------------------------------------------------------
 
 local function sanitize_filename(name)
 
@@ -514,9 +492,7 @@ local function format_display_time(seconds)
     )
 end
 
-------------------------------------------------------------
 -- DETERMINISTIC SHORT HASH
-------------------------------------------------------------
 
 local function make_hash(text)
 
@@ -538,9 +514,7 @@ local function make_hash(text)
     )
 end
 
-------------------------------------------------------------
 -- GET SOURCE FILE
-------------------------------------------------------------
 
 local function get_source()
 
@@ -555,9 +529,7 @@ local function get_source()
         return nil
     end
 
-    --------------------------------------------------------
     -- MAKE RELATIVE PATH ABSOLUTE
-    --------------------------------------------------------
 
     local is_absolute =
         source:match("^%a:[/\\]") ~= nil
@@ -581,9 +553,7 @@ local function get_source()
     return source
 end
 
-------------------------------------------------------------
 -- GET SUBTITLE LINES
-------------------------------------------------------------
 
 local function get_subtitle_lines()
 
@@ -596,13 +566,8 @@ local function get_subtitle_lines()
         return nil
     end
 
-    --------------------------------------------------------
-    -- MPV's subtitle event timestamps are the timestamps
-    -- stored in the subtitle track. A user-set sub-delay
-    -- changes when those events are displayed, so apply the
-    -- same delay anywhere this script uses subtitle
-    -- timestamps as positions in the media.
-    --------------------------------------------------------
+    -- Subtitle timestamps are track positions; apply sub-delay when using
+    -- them as positions in the media.
 
     local sub_delay =
         mp.get_property_number(
@@ -637,9 +602,7 @@ local function get_subtitle_lines()
     return adjusted
 end
 
-------------------------------------------------------------
 -- COUNT SUBTITLES IN SELECTED RANGE
-------------------------------------------------------------
 
 local function count_subtitles_in_range(
     start_time,
@@ -681,14 +644,11 @@ local function count_subtitles_in_range(
         local sub_end =
             subtitle["end"]
 
-        ----------------------------------------------------
         -- SUBTITLE WITH START + END
-        ----------------------------------------------------
 
         if sub_start and sub_end then
 
-            -- Count any subtitle whose time range
-            -- overlaps the selected audio range.
+            -- Count any subtitle overlapping the selected range.
 
             if sub_start <= range_end
                and sub_end >= range_start then
@@ -697,9 +657,7 @@ local function count_subtitles_in_range(
                     count + 1
             end
 
-        ----------------------------------------------------
         -- SUBTITLE WITHOUT KNOWN END
-        ----------------------------------------------------
 
         elseif sub_start then
 
@@ -715,9 +673,7 @@ local function count_subtitles_in_range(
     return count
 end
 
-------------------------------------------------------------
 -- COPY FILE TO CLIPBOARD
-------------------------------------------------------------
 
 local function copy_file_to_clipboard(path)
     if is_windows then
@@ -746,11 +702,8 @@ local function copy_file_to_clipboard(path)
     end
 
     if is_macos then
-        -- Put a real file object on the macOS pasteboard. This behaves
-        -- like copying the MP3 in Finder, which lets compatible apps
-        -- receive the actual file when pasted.
-        -- Pass the path as an argv value rather than embedding it in the
-        -- AppleScript source. This safely handles spaces and punctuation.
+        -- Put a real file on the macOS pasteboard (like Finder). Pass the path
+        -- as an argv value so spaces and punctuation are safe.
         return utils.subprocess({
             args = {
                 "/usr/bin/osascript",
@@ -770,15 +723,11 @@ local function copy_file_to_clipboard(path)
     }
 end
 
-------------------------------------------------------------
 -- SELF-CLEANING: remove the clip once the clipboard lets go of it
 --
--- The MP3 is placed on the clipboard as a FILE reference, so it has to stay
--- until the clipboard stops pointing at it (the user may paste more than
--- once). A lightweight, non-blocking timer polls the clipboard and deletes
--- the file the moment it is no longer referenced. Only our own scratch files
--- are ever removed, and a file the clipboard still holds is always kept.
-------------------------------------------------------------
+-- The MP3 is on the clipboard as a file reference, so it stays until the
+-- clipboard stops pointing at it. A non-blocking timer polls and deletes it;
+-- a file the clipboard still holds is always kept.
 local pending_clip = {}          -- [normalized path] = true
 local clip_busy = false
 local clip_timer = nil
@@ -813,8 +762,8 @@ local function collect_referenced(list, okq)
         if onclip[p] then
             clip_misses[p] = nil
         else
-            -- Require two consecutive absent reads before deleting, so a single
-            -- transient clipboard read failure can never drop a file too soon.
+            -- Two consecutive absent reads required, so one failed read can't
+            -- drop a file too soon.
             clip_misses[p] = (clip_misses[p] or 0) + 1
             if clip_misses[p] >= 2 then
                 SCRATCH.remove(p)
@@ -859,8 +808,8 @@ local function watch_clip_file(path)
 end
 
 local function flush_clip_files()
-    -- Last chance at exit. Files the clipboard still references are kept so a
-    -- paste made after mpv closes still works; the next launch sweeps them.
+    -- Last chance at exit; files still on the clipboard are kept for a later
+    -- paste and swept on the next launch.
     if not pending_any() then return end
     local args = clipboard_query_args()
     if not args then
@@ -883,16 +832,11 @@ end
 
 mp.register_event("shutdown", flush_clip_files)
 
-------------------------------------------------------------
 -- EXTRACT AUDIO RANGE
-------------------------------------------------------------
 
 local function active_audio_map_arg()
-    -- Return the ffmpeg "-map" argument selecting the SAME audio track the
-    -- user currently has active in mpv. Without this, ffmpeg auto-selects its
-    -- default (best/first) audio stream and ignores the user's track choice.
-    -- Prefer the container stream index (ff-index); fall back to the 0-based
-    -- ordinal among audio-type tracks ("0:a:N") when ff-index is unavailable.
+    -- Return the ffmpeg "-map" for the user's active audio track (otherwise
+    -- ffmpeg picks its own default). Prefer ff-index, else "0:a:N".
     local tracks =
         mp.get_property_native(
             "track-list"
@@ -936,8 +880,7 @@ local function active_audio_map_arg()
         )
     end
 
-    -- No active audio track (audio disabled / no tracks). Leave ffmpeg's own
-    -- stream selection rather than forcing a stream that may not exist.
+    -- No active audio track: leave ffmpeg's own selection.
     return nil
 end
 
@@ -976,9 +919,7 @@ local function extract_range(
     local duration =
         end_time - start_time
 
-    --------------------------------------------------------
     -- OUTPUT FILENAME
-    --------------------------------------------------------
 
     local video_name =
         mp.get_property(
@@ -1022,9 +963,7 @@ local function extract_range(
             audio_filename
         )
 
-    --------------------------------------------------------
     -- BUILD FFMPEG COMMAND
-    --------------------------------------------------------
 
     local ffmpeg =
         find_ffmpeg()
@@ -1055,8 +994,8 @@ local function extract_range(
         "-vn"
     }
 
-    -- Extract from the currently selected audio track (see
-    -- active_audio_map_arg), not ffmpeg's default first audio stream.
+    -- Extract from the active audio track (see active_audio_map_arg), not
+    -- ffmpeg's default first stream.
     local map_arg =
         active_audio_map_arg()
 
@@ -1071,9 +1010,7 @@ local function extract_range(
         )
     end
 
-    --------------------------------------------------------
     -- AUDIO BOOST + CLIPPING PROTECTION
-    --------------------------------------------------------
 
     if math.abs(
         audio_boost_db
@@ -1093,9 +1030,7 @@ local function extract_range(
         )
     end
 
-    --------------------------------------------------------
     -- MP3 ENCODING
-    --------------------------------------------------------
 
     table.insert(
         args,
@@ -1122,9 +1057,7 @@ local function extract_range(
         output
     )
 
-    --------------------------------------------------------
     -- RUN FFMPEG
-    --------------------------------------------------------
 
     local result =
         utils.subprocess({
@@ -1174,9 +1107,7 @@ local function extract_range(
         return
     end
 
-    --------------------------------------------------------
     -- COPY MP3 TO CLIPBOARD
-    --------------------------------------------------------
 
     local clipboard_result =
         copy_file_to_clipboard(
@@ -1228,9 +1159,7 @@ local function extract_range(
     end
 end
 
-------------------------------------------------------------
 -- QUICK SUBTITLE CLIP
-------------------------------------------------------------
 
 local function extract_subtitle_audio()
 
@@ -1254,12 +1183,8 @@ local function extract_subtitle_audio()
         return
     end
 
-    --------------------------------------------------------
-    -- sub-start / sub-end identify the subtitle event's
-    -- original timestamps. If the viewer has adjusted
-    -- sub-delay, extract from where that subtitle is
-    -- actually being displayed instead.
-    --------------------------------------------------------
+    -- sub-start / sub-end are the event's original timestamps; if sub-delay
+    -- is set, extract from where the subtitle is actually shown.
 
     local sub_delay =
         mp.get_property_number(
@@ -1282,9 +1207,7 @@ local function extract_subtitle_audio()
     )
 end
 
-------------------------------------------------------------
 -- MANUAL CLIP OSD
-------------------------------------------------------------
 
 local function update_manual_osd()
 
@@ -1303,9 +1226,7 @@ local function update_manual_osd()
         return
     end
 
-    --------------------------------------------------------
     -- DURATION
-    --------------------------------------------------------
 
     local difference =
         current - manual_start
@@ -1331,9 +1252,7 @@ local function update_manual_osd()
             )
     end
 
-    --------------------------------------------------------
     -- SUBTITLE COUNT
-    --------------------------------------------------------
 
     local subtitle_count =
         count_subtitles_in_range(
@@ -1356,9 +1275,7 @@ local function update_manual_osd()
             )
     end
 
-    --------------------------------------------------------
     -- OPTIONAL AUDIO BOOST LINE
-    --------------------------------------------------------
 
     local boost_status = ""
 
@@ -1382,16 +1299,12 @@ local function update_manual_osd()
             ")\\N"
     end
 
-    --------------------------------------------------------
     -- OSD
-    --------------------------------------------------------
 
     local text =
         string.format(
 
-            ------------------------------------------------
             -- TITLE
-            ------------------------------------------------
 
             "{\\an7\\pos(20,20)" ..
             "\\fs30\\bord2\\shad0" ..
@@ -1401,9 +1314,7 @@ local function update_manual_osd()
 
             "\\N" ..
 
-            ------------------------------------------------
             -- START
-            ------------------------------------------------
 
             "{\\fs26\\1c&H00FFFF&}" ..
             "START       " ..
@@ -1411,9 +1322,7 @@ local function update_manual_osd()
             "{\\1c&HFFFFFF&}" ..
             "%s\\N" ..
 
-            ------------------------------------------------
             -- END
-            ------------------------------------------------
 
             "{\\1c&H00FFFF&}" ..
             "END         " ..
@@ -1427,9 +1336,7 @@ local function update_manual_osd()
             "{\\1c&H00FFFF&}" ..
             "  (%s)\\N" ..
 
-            ------------------------------------------------
             -- SUBTITLE COUNT
-            ------------------------------------------------
 
             "{\\fs21\\1c&HAAAAAA&}" ..
             "SUBTITLES   " ..
@@ -1437,17 +1344,13 @@ local function update_manual_osd()
             "{\\1c&HFFFFFF&}" ..
             "%s\\N" ..
 
-            ------------------------------------------------
             -- OPTIONAL BOOST
-            ------------------------------------------------
 
             "%s" ..
 
             "\\N" ..
 
-            ------------------------------------------------
             -- EXPLANATION
-            ------------------------------------------------
 
             "{\\fs24\\1c&H00FFFF&}" ..
             "Press " ..
@@ -1460,9 +1363,7 @@ local function update_manual_osd()
 
             "\\N" ..
 
-            ------------------------------------------------
             -- KEYBINDS
-            ------------------------------------------------
 
             "{\\fs22\\1c&HFFFFFF&}" ..
             "Ctrl+Shift+E" ..
@@ -1539,9 +1440,7 @@ local function update_manual_osd()
     )
 end
 
-------------------------------------------------------------
 -- MANUAL FINE / COARSE SEEK
-------------------------------------------------------------
 
 local function manual_seek(amount)
 
@@ -1562,9 +1461,7 @@ local function manual_seek(amount)
     update_manual_osd()
 end
 
-------------------------------------------------------------
 -- JUMP TO SUBTITLE START
-------------------------------------------------------------
 
 local function seek_subtitle_start(direction)
 
@@ -1583,9 +1480,7 @@ local function seek_subtitle_start(direction)
     update_manual_osd()
 end
 
-------------------------------------------------------------
 -- JUMP TO NEAREST ACTUAL SUBTITLE END
-------------------------------------------------------------
 
 local function seek_subtitle_end(direction)
 
@@ -1614,24 +1509,17 @@ local function seek_subtitle_end(direction)
         return
     end
 
-    --------------------------------------------------------
     -- SEEK TOLERANCE
     --
-    -- MPV may land a few milliseconds away from the exact
-    -- subtitle timestamp after seeking.
-    --
-    -- Treat anything within 50 ms as the current boundary
-    -- so repeated Alt+Left / Alt+Right presses always move
-    -- to a DIFFERENT subtitle end.
-    --------------------------------------------------------
+    -- mpv may land a few ms off a timestamp, so treat anything within 50 ms as
+    -- the current boundary, making repeated Alt+Left/Right always move to a
+    -- different subtitle end.
 
     local tolerance = 0.050
 
     local closest = nil
 
-    --------------------------------------------------------
     -- SEARCH AVAILABLE SUBTITLE END TIMESTAMPS
-    --------------------------------------------------------
 
     for _, subtitle in ipairs(lines) do
 
@@ -1640,12 +1528,9 @@ local function seek_subtitle_end(direction)
 
         if sub_end then
 
-            ------------------------------------------------
             -- ALT + RIGHT
             --
-            -- Find the closest subtitle END that is
-            -- definitely ahead of the current boundary.
-            ------------------------------------------------
+            -- Closest subtitle end definitely ahead of the current boundary.
 
             if direction > 0 then
 
@@ -1659,12 +1544,9 @@ local function seek_subtitle_end(direction)
                     end
                 end
 
-            ------------------------------------------------
             -- ALT + LEFT
             --
-            -- Find the closest subtitle END that is
-            -- definitely behind the current boundary.
-            ------------------------------------------------
+            -- Closest subtitle end definitely behind the current boundary.
 
             else
 
@@ -1681,9 +1563,7 @@ local function seek_subtitle_end(direction)
         end
     end
 
-    --------------------------------------------------------
     -- NO END FOUND IN REQUESTED DIRECTION
-    --------------------------------------------------------
 
     if not closest then
 
@@ -1703,9 +1583,7 @@ local function seek_subtitle_end(direction)
         return
     end
 
-    --------------------------------------------------------
     -- SEEK DIRECTLY TO THAT SUBTITLE END
-    --------------------------------------------------------
 
     mp.commandv(
         "no-osd",
@@ -1720,9 +1598,7 @@ local function seek_subtitle_end(direction)
 
     update_manual_osd()
 end
-------------------------------------------------------------
 -- REMOVE MANUAL CLIP BINDINGS
-------------------------------------------------------------
 
 local function remove_manual_bindings()
 
@@ -1763,9 +1639,7 @@ local function remove_manual_bindings()
     )
 end
 
-------------------------------------------------------------
 -- CANCEL MANUAL CLIP
-------------------------------------------------------------
 
 local function cancel_manual_mode()
 
@@ -1795,15 +1669,11 @@ local function cancel_manual_mode()
     )
 end
 
-------------------------------------------------------------
 -- ADD MANUAL CLIP BINDINGS
-------------------------------------------------------------
 
 local function add_manual_bindings()
 
-    --------------------------------------------------------
     -- 0.1 SECOND ADJUSTMENT
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "LEFT",
@@ -1829,9 +1699,7 @@ local function add_manual_bindings()
         end
     )
 
-    --------------------------------------------------------
     -- 0.5 SECOND ADJUSTMENT
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "Shift+LEFT",
@@ -1857,9 +1725,7 @@ local function add_manual_bindings()
         end
     )
 
-    --------------------------------------------------------
     -- SUBTITLE STARTS
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "Ctrl+LEFT",
@@ -1885,9 +1751,7 @@ local function add_manual_bindings()
         end
     )
 
-    --------------------------------------------------------
     -- SUBTITLE ENDS
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "Alt+LEFT",
@@ -1913,9 +1777,7 @@ local function add_manual_bindings()
         end
     )
 
-    --------------------------------------------------------
     -- CANCEL
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "ESC",
@@ -1924,23 +1786,17 @@ local function add_manual_bindings()
     )
 end
 
-------------------------------------------------------------
 -- MANUAL CLIP MODE
-------------------------------------------------------------
 
 local function toggle_manual_clip()
 
-    --------------------------------------------------------
     -- DO NOT OPEN OVER AUDIO BOOST MENU
-    --------------------------------------------------------
 
     if boost_menu_active then
         return
     end
 
-    --------------------------------------------------------
     -- FIRST PRESS = SET START
-    --------------------------------------------------------
 
     if not manual_active then
 
@@ -1977,9 +1833,7 @@ local function toggle_manual_clip()
         return
     end
 
-    --------------------------------------------------------
     -- SECOND PRESS = SET END
-    --------------------------------------------------------
 
     local end_time =
         mp.get_property_number(
@@ -1993,9 +1847,7 @@ local function toggle_manual_clip()
     local start_time =
         manual_start
 
-    --------------------------------------------------------
     -- CLOSE MANUAL CLIP UI
-    --------------------------------------------------------
 
     manual_active =
         false
@@ -2017,9 +1869,7 @@ local function toggle_manual_clip()
         ""
     )
 
-    --------------------------------------------------------
     -- SUPPORT SELECTING BACKWARDS
-    --------------------------------------------------------
 
     if end_time < start_time then
 
@@ -2029,9 +1879,7 @@ local function toggle_manual_clip()
             start_time
     end
 
-    --------------------------------------------------------
     -- EXTRACT + COPY TO CLIPBOARD
-    --------------------------------------------------------
 
     extract_range(
         start_time,
@@ -2039,9 +1887,7 @@ local function toggle_manual_clip()
     )
 end
 
-------------------------------------------------------------
 -- AUDIO BOOST OSD
-------------------------------------------------------------
 
 local function update_boost_osd()
 
@@ -2065,9 +1911,7 @@ local function update_boost_osd()
     local text =
         string.format(
 
-            ------------------------------------------------
             -- TITLE
-            ------------------------------------------------
 
             "{\\an7\\pos(20,20)" ..
             "\\fs30\\bord2\\shad0" ..
@@ -2077,9 +1921,7 @@ local function update_boost_osd()
 
             "\\N" ..
 
-            ------------------------------------------------
             -- BOOST VALUE
-            ------------------------------------------------
 
             "{\\fs28\\1c&H00FFFF&}" ..
             "BOOST   " ..
@@ -2090,27 +1932,21 @@ local function update_boost_osd()
             "{\\1c&H00FFFF&}" ..
             "(%s)\\N" ..
 
-            ------------------------------------------------
             -- INTUITIVE VOLUME EQUIVALENT
-            ------------------------------------------------
 
             "{\\fs21\\1c&HAAAAAA&}" ..
             "About %.0f%% of the original audio level\\N" ..
 
             "\\N" ..
 
-            ------------------------------------------------
             -- EXPLANATION
-            ------------------------------------------------
 
             "{\\fs23\\1c&H00FFFF&}" ..
             "This boost is applied to extracted audio only.\\N" ..
 
             "\\N" ..
 
-            ------------------------------------------------
             -- CONTROLS
-            ------------------------------------------------
 
             "{\\fs22\\1c&HFFFFFF&}" ..
             "Left / Right" ..
@@ -2167,9 +2003,7 @@ local function update_boost_osd()
     )
 end
 
-------------------------------------------------------------
 -- ADJUST AUDIO BOOST
-------------------------------------------------------------
 
 local function adjust_audio_boost(amount)
 
@@ -2195,9 +2029,7 @@ local function adjust_audio_boost(amount)
     update_boost_osd()
 end
 
-------------------------------------------------------------
 -- REMOVE AUDIO BOOST BINDINGS
-------------------------------------------------------------
 
 local function remove_boost_bindings()
 
@@ -2222,9 +2054,7 @@ local function remove_boost_bindings()
     )
 end
 
-------------------------------------------------------------
 -- CANCEL AUDIO BOOST MENU
-------------------------------------------------------------
 
 local function cancel_boost_menu()
 
@@ -2254,15 +2084,11 @@ local function cancel_boost_menu()
     )
 end
 
-------------------------------------------------------------
 -- ADD AUDIO BOOST BINDINGS
-------------------------------------------------------------
 
 local function add_boost_bindings()
 
-    --------------------------------------------------------
     -- 1 dB
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "LEFT",
@@ -2288,9 +2114,7 @@ local function add_boost_bindings()
         end
     )
 
-    --------------------------------------------------------
     -- 0.5 dB
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "Shift+LEFT",
@@ -2316,9 +2140,7 @@ local function add_boost_bindings()
         end
     )
 
-    --------------------------------------------------------
     -- CANCEL
-    --------------------------------------------------------
 
     mp.add_forced_key_binding(
         "ESC",
@@ -2327,23 +2149,17 @@ local function add_boost_bindings()
     )
 end
 
-------------------------------------------------------------
 -- OPEN / SAVE AUDIO BOOST MENU
-------------------------------------------------------------
 
 local function toggle_boost_menu()
 
-    --------------------------------------------------------
     -- DO NOT OPEN OVER MANUAL CLIP MENU
-    --------------------------------------------------------
 
     if manual_active then
         return
     end
 
-    --------------------------------------------------------
     -- OPEN
-    --------------------------------------------------------
 
     if not boost_menu_active then
 
@@ -2360,9 +2176,7 @@ local function toggle_boost_menu()
         return
     end
 
-    --------------------------------------------------------
     -- SAVE AND CLOSE
-    --------------------------------------------------------
 
     local changed =
         math.abs(
@@ -2384,9 +2198,7 @@ local function toggle_boost_menu()
         ""
     )
 
-    --------------------------------------------------------
     -- CREATE / UPDATE CONFIG ONLY AFTER A CHANGE
-    --------------------------------------------------------
 
     if changed then
 
@@ -2418,18 +2230,14 @@ local function toggle_boost_menu()
     end
 end
 
-------------------------------------------------------------
 -- RESET TEMPORARY UI WHEN A NEW FILE LOADS
-------------------------------------------------------------
 
 mp.register_event(
     "file-loaded",
 
     function()
 
-        ----------------------------------------------------
         -- MANUAL CLIP
-        ----------------------------------------------------
 
         manual_active =
             false
@@ -2445,9 +2253,7 @@ mp.register_event(
 
         remove_manual_bindings()
 
-        ----------------------------------------------------
         -- AUDIO BOOST MENU
-        ----------------------------------------------------
 
         if boost_menu_active then
 
@@ -2464,9 +2270,7 @@ mp.register_event(
             remove_boost_bindings()
         end
 
-        ----------------------------------------------------
         -- CLEAR SCRIPT OSD
-        ----------------------------------------------------
 
         mp.set_osd_ass(
             0,
@@ -2476,9 +2280,7 @@ mp.register_event(
     end
 )
 
-------------------------------------------------------------
 -- MAIN KEY BINDINGS
-------------------------------------------------------------
 
 local function install_main_bindings()
     mp.remove_key_binding("helska-subtitle-audio-to-clipboard")
@@ -2503,9 +2305,8 @@ end
 
 install_main_bindings()
 
--- Pause this script's hotkeys while the Console owns input (its manual-sync
--- and boost menus force-bind the arrow keys, which would clash). Binding state
--- is untouched and restored on "off".
+-- Pause this script's hotkeys while the Console owns input (its menus force-bind
+-- the arrow keys, which would clash). Binding state is restored on "off".
 local function remove_audio_hotkeys()
     mp.remove_key_binding("helska-subtitle-audio-to-clipboard")
     mp.remove_key_binding("helska-manual-audio-clip")
@@ -2534,9 +2335,7 @@ mp.register_script_message("helska-console-focus", function(state)
     end
 end)
 
-------------------------------------------------------------
 -- HELSKA CONSOLE INTEGRATION
-------------------------------------------------------------
 
 mp.register_script_message("console-audio-copy", extract_subtitle_audio)
 mp.register_script_message("console-audio-manual", toggle_manual_clip)
@@ -2588,12 +2387,10 @@ mp.register_script_message(
 mp.register_script_message("console-reload-bindings", install_main_bindings)
 
 
-----------------------------------------------------------------------
 -- HELSKA CONSOLE COMPATIBILITY
 --
--- This script owns its actions and key bindings. Helska Console only
--- discovers metadata and sends generic run/reload messages.
-----------------------------------------------------------------------
+-- This script owns its actions and bindings; the Console only discovers
+-- metadata and sends generic run/reload messages.
 
 local HELSKA_CONSOLE_ACTIONS = {
     {

@@ -22,12 +22,10 @@ local PRELOAD_DESCRIPTION = "extract current subtitle track without saving it as
 local script_dir = mp.get_script_directory() or "."
 local config_path = utils.join_path(script_dir, "helska.conf")
 
-------------------------------------------------------------------------
 -- TEMPORARY FILES  (self-cleaning scratch folder)
 --
 -- The "preload-subs" working file goes into scripts/helska/temporary_files/.
 -- Only files inside that folder (never the README) are ever removed.
-------------------------------------------------------------------------
 local SCRATCH = (function()
     local function norm(path)
         local n = tostring(path):gsub("\\", "/")

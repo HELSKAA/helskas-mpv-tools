@@ -10,12 +10,10 @@
 local mp = require "mp"
 local utils = require "mp.utils"
 
-----------------------------------------------------------------------
 -- CONFIGURATION
 --
 -- This script is standalone: it can create and maintain helska.conf itself.
 -- Helska Console is optional and simply shares the same configuration file.
-----------------------------------------------------------------------
 
 local function script_dir()
     local source = debug.getinfo(1, "S").source
@@ -103,9 +101,7 @@ local function configured_binding()
     return value or "Ctrl+j"
 end
 
-----------------------------------------------------------------------
 -- PLATFORM / FONT DISCOVERY
-----------------------------------------------------------------------
 
 local is_windows = package.config:sub(1, 1) == "\\"
 local is_macos = false
@@ -236,9 +232,7 @@ local function discover_fonts()
     return fonts
 end
 
-----------------------------------------------------------------------
 -- MENU STATE
-----------------------------------------------------------------------
 
 local overlay = mp.create_osd_overlay("ass-events")
 local is_open = false
@@ -256,9 +250,7 @@ local active_menu_keys = {}
 
 local MAX_VISIBLE = 8
 
-----------------------------------------------------------------------
 -- VISUALS
-----------------------------------------------------------------------
 
 local C_PANEL       = "&H201714&"
 local C_BORDER      = "&H70543B&"
@@ -397,12 +389,8 @@ local function render()
                 )
             end
 
-            -- Preview only the font-name glyphs in their own typeface.
-            -- Geometry stays owned by the picker: fixed font size, fixed row
-            -- height, fixed baseline, and a hard clip rectangle. A font with
-            -- unusual ascenders/descenders or very wide glyphs therefore
-            -- cannot resize the row, move the highlight, overlap CURRENT, or
-            -- escape the panel.
+            -- Preview the font-name glyphs in their own typeface, clipped to a
+            -- fixed box so an unusual font can't resize the row or escape.
             local preview_right = x2 - pad - math.max(
                 72, math.floor(112 * scale + 0.5)
             )
@@ -450,9 +438,7 @@ local function render()
     overlay:update()
 end
 
-----------------------------------------------------------------------
 -- SEARCH / SOFT AUTOFILL
-----------------------------------------------------------------------
 
 local function score_font(font, needle)
     local f = font:lower()
@@ -576,9 +562,7 @@ local function move_selection(direction)
     render()
 end
 
-----------------------------------------------------------------------
 -- APPLY / OPEN / CLOSE
-----------------------------------------------------------------------
 
 local function apply_font(font)
     if not font or font == "" then return false end
@@ -600,13 +584,9 @@ local function apply_font(font)
     return true
 end
 
--- NOTE: the picker input is implemented with mp.add_forced_key_binding (the
--- canonical, dispatch-safe primitive the Helska Console also uses) instead of
--- named input sections. Modern mpv treats define-section/enable-section as
--- deprecated: enable-section rejects non-default flags and define-section
--- rejects custom section names, so a section-based menu never actually
--- receives keys (its keys would fall through to the console forced TAB and
--- open the console instead of cycling fonts).
+-- Input uses mp.add_forced_key_binding, not input sections: modern mpv rejects
+-- custom section names, so section-based keys would fall through to the
+-- console instead of cycling fonts.
 
 local function accepted_event(event, repeatable)
     if not event or not event.event then return true end
@@ -615,14 +595,9 @@ local function accepted_event(event, repeatable)
         or (repeatable and event.event == "repeat")
 end
 
--- Register one modal hotkey as a forced key binding (highest priority, like
--- the console). mpv resolves matching bindings most-recently-registered
--- first, so the bindings added here at open time win over the console
--- always-on forced OPEN binding for the same key (TAB cycles fonts instead
--- of opening the console), and removing them on close restores normal
--- behaviour.
--- close_menu is defined further below, but add_menu_hotkey's error guard must
--- be able to call it, so it is forward-declared here.
+-- Register one modal hotkey as a forced binding (added at open time so it wins
+-- over the console's forced opener; removed on close). close_menu is
+-- forward-declared so the error guard can call it.
 local close_menu
 
 local function add_menu_hotkey(key, id, fn, repeatable)
@@ -856,9 +831,7 @@ local function open_menu()
     render()
 end
 
-----------------------------------------------------------------------
 -- MAIN BINDING
-----------------------------------------------------------------------
 
 local function install_main_binding()
     mp.remove_key_binding("helska-subtitle-font-open")
@@ -891,9 +864,7 @@ mp.register_script_message("helska-console-focus", function(state)
     end
 end)
 
-----------------------------------------------------------------------
 -- HELSKA CONSOLE COMPATIBILITY
-----------------------------------------------------------------------
 
 local HELSKA_CONSOLE_ACTIONS = {
     {

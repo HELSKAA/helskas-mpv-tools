@@ -13,9 +13,7 @@
 local mp = require "mp"
 local utils = require "mp.utils"
 
--- ---------------------------------------------------------------------------
 -- 1) Locate this loader, then the "helska" folder sitting next to it.
--- ---------------------------------------------------------------------------
 local function script_dir()
     local src = debug.getinfo(1, "S").source or ""
     if src:sub(1, 1) == "@" then src = src:sub(2) end
@@ -31,11 +29,9 @@ local function file_exists(path)
     return false
 end
 
--- ---------------------------------------------------------------------------
 -- 2) Bundle scripts that ask mpv for their "script directory" should get the
 --    helska/ folder, NOT scripts/ (this matches where the config + bundled
 --    tools live and keeps every module consistent under one mpv script).
--- ---------------------------------------------------------------------------
 mp.get_script_directory = function() return BUNDLE end
 
 -- All modules run inside this ONE script, so mp.get_script_name() returns
@@ -43,11 +39,9 @@ mp.get_script_directory = function() return BUNDLE end
 -- (below) can recognize that shared owner.
 local SCRIPT_NAME = mp.get_script_name() or "helska"
 
--- ---------------------------------------------------------------------------
 -- 3) Centralize the console protocol messages that several modules register.
 --    Unique messages (console-audio-*, toggle-*, open-*, next/previous, ...)
 --    pass straight through to the real mpv registration.
--- ---------------------------------------------------------------------------
 local SHARED = {
     ["helska-console-discover"]        = true,
     ["helska-console-run"]             = true,
@@ -65,12 +59,8 @@ mp.register_script_message = function(name, fn)
         if not list then list = {}; handlers[name] = list end
         list[#list + 1] = fn
     elseif name == "helska-console-end-owner" then
-        -- All modules share SCRIPT_NAME (single merged script). The console's
-        -- end-owner handler prunes "this owner's" entries missing from the
-        -- just-finished advertise batch; with one shared owner that would wipe
-        -- each previous module's actions in turn. Bundle actions are static
-        -- (explicit removal uses helska-console-unregister-owner), so skip the
-        -- prune for the shared owner. Distinct real owners still prune.
+        -- All modules share SCRIPT_NAME, so skip the console's stale-owner
+        -- prune for the shared owner (it would wipe earlier modules' actions).
         real_register(name, function(owner)
             if owner == SCRIPT_NAME then return end
             fn(owner)
@@ -80,14 +70,10 @@ mp.register_script_message = function(name, fn)
     end
 end
 
--- ---------------------------------------------------------------------------
--- 4) Load the modules. The console must load FIRST (it is the registration
---    server every other module advertises to); the rest load in sorted order
---    so startup is deterministic. EVERY *.lua in the helska/ folder is picked
---    up automatically, so a user can add their OWN Console-compatible script
---    with no edit here, and deleting a file simply disables that feature.
---    Load errors are reported but do not take down the rest of the bundle.
--- ---------------------------------------------------------------------------
+-- 4) Load the modules: console first (the registration server), then the rest
+--    in sorted order. Every *.lua in helska/ is picked up automatically, so
+--    adding/removing a script needs no edit here. Load errors are reported
+--    but do not take down the rest.
 local CONSOLE_MODULE = "helska_console.lua"
 
 -- Known module names, used ONLY as a fallback for ancient mpv builds that
@@ -97,9 +83,7 @@ local KNOWN_MODULES = {
     "helska_audio-clipboard.lua",
     "helska_chinese.lua",
     "helska_extract-current-subtitle.lua",
-    "helska_hold-to-speed.lua",
     "helska_playback.lua",
-    "helska_rebind_mouse4-5_to_arrow_keys.lua",
     "helska_screenshot-clipboard.lua",
     "helska_subtitle-font.lua",
     "helska_subtitle_clipboard.lua",
@@ -159,11 +143,9 @@ for _, file in ipairs(modules) do
     end
 end
 
--- ---------------------------------------------------------------------------
 -- 5) Install one real router per shared message. For "run" we quiet only the
 --    expected "Unknown Helska Console action" warnings (spawned by the modules
 --    that do not own the action being invoked); real warnings still show.
--- ---------------------------------------------------------------------------
 mp.register_script_message = real_register -- put mpv's function back
 
 local real_warn = mp.msg.warn
@@ -194,22 +176,13 @@ end
 -- already shows the full menu.
 mp.commandv("script-message", "helska-console-discover")
 
--- ---------------------------------------------------------------------------
--- ---------------------------------------------------------------------------
 -- 6) Windows: clear the "downloaded from the internet" flag once on a fresh
 --    install so Windows does not block the bundled tools (SmartScreen). This
 --    runs a single time (marker file), so normal launches stay fast.
 --
---    Recursively unblock EVERYTHING under the bundle. Windows attaches a
---    Zone.Identifier flag to each file of a downloaded zip/email and blocks
---    not just the executables but also the DLLs they load and the .pyd
---    extension modules that embedded Python imports (e.g. _ctypes.pyd).
---    Unblocking only ffmpeg.exe/opencc.exe/python.exe is NOT enough: if
---    sibling DLLs stay flagged, python.exe starts but then fails when it
---    imports what it needs, so the tone-coloring python probe fails on a
---    machine with no system Python. Clearing the whole tree makes a fresh
---    install fully self-contained.
--- ---------------------------------------------------------------------------
+--    Recursively unblock everything under the bundle. A downloaded zip flags
+--    not only the exes but the DLLs and .pyd modules they load; unblocking
+--    just ffmpeg/opencc/python is not enough for a self-contained install.
 local function windows_unblock_once()
     if package.config:sub(1, 1) ~= "\\" then return end
     local marker = utils.join_path(BUNDLE, ".unblocked")
@@ -227,13 +200,11 @@ local function windows_unblock_once()
 end
 windows_unblock_once()
 
--- ---------------------------------------------------------------------------
 -- 7) Self-cleaning scratch folder: scripts/helska/temporary_files
 --
 --    Short-lived working files go here so the bundle only ever deletes files
 --    inside its own folder (never the README). A leftover is removed only when
 --    it is not on the clipboard and not loaded as a track.
--- ---------------------------------------------------------------------------
 local SCRATCH_DIR = utils.join_path(BUNDLE, "temporary_files")
 
 local SCRATCH_README = [[HELSKA'S MPV TOOLS - temporary_files
@@ -348,14 +319,9 @@ local function alive_pids(pids)
     return set, queried
 end
 
--- Read the mpv process id a leftover file belongs to, if its name still
--- records one. Internal working files are named like
---   helska-chinese-source-<pid>-<millis>.<ext>
--- so the trailing "<pid>-<millis>" carries the owner. Files left by an earlier
--- build that used the "helska-tmp-<pid>-..." prefix are also recognised. The
--- user-visible tracks (tone colors, preload, ...) keep clean names and carry
--- no pid, so they are protected by the clipboard / loaded-track / other-session
--- checks instead.
+-- Read the mpv pid a leftover belongs to from its name (internal files are
+-- named helska-...-<pid>-<millis>.<ext>). User-visible tracks carry no pid
+-- and are protected by the clipboard / loaded-track / other-session checks.
 local function scratch_pid_of(name)
     -- Old prefixed naming: helska-tmp-<pid>-...
     local pid = name:match("^helska%-tmp%-(%d+)%-")
@@ -370,11 +336,9 @@ local function scratch_pid_of(name)
     return nil
 end
 
--- Multi-instance safety ------------------------------------------------------
--- Every running mpv writes ONE tiny marker (named "<pid>"). While a marker's
--- process is alive, another instance must not delete THAT instance's files, so
--- opening a second mpv window can never pull a subtitle file out from under the
--- first. Markers whose process has exited are cleaned up by the sweep.
+-- Multi-instance safety
+-- Each running mpv writes one "<pid>" marker; while that process is alive,
+-- another instance must not delete its files. Dead markers are swept later.
 local SESSION_PREFIX = ".helska-session-"
 
 local function session_marker_path(pid)
@@ -419,11 +383,9 @@ local function loaded_track_sets()
     return { path = path, base = base }
 end
 
--- Remove leftovers from a previous run. Safe by construction: a file is only
--- deleted when it is NOT this run's, NOT on the clipboard anymore, NOT loaded
--- as a track in this mpv, and NOT owned by a live process (or, for files whose
--- name carries no pid, when no other live mpv instance is present).
--- Only one sweep may be in flight at a time (its final step is asynchronous).
+-- Remove leftovers from a previous run. A file is deleted only when it is not
+-- this run's, not on the clipboard, not loaded as a track, and not owned by a
+-- live process. Only one sweep runs at a time.
 local sweep_busy = false
 local function scratch_sweep()
     if sweep_busy then return end

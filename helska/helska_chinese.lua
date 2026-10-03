@@ -1,12 +1,8 @@
 -- helska_chinese.lua
--- Chinese subtitle tools: Mandarin tone colouring and Simplified/Traditional
--- conversion. The original subtitle is never changed in place; at most one
--- generated subtitle track is kept.
+-- Mandarin tone colouring and Simplified/Traditional conversion. The original
+-- subtitle is never changed; at most one generated track is kept.
 --
--- Tools, bundled under helska/ and falling back to PATH:
---   python (+ pypinyin)  tone colouring
---   OpenCC               Hanzi conversion
---   ffmpeg               embedded-subtitle preload
+-- Bundled tools (falling back to PATH): python+pypinyin, OpenCC, ffmpeg.
 -- helska_tone_colors.py must sit beside this file.
 
 local mp = require "mp"
@@ -59,9 +55,7 @@ local SCRIPT_DIR = script_dir()
 local HELPER = utils.join_path(SCRIPT_DIR, "helska_tone_colors.py")
 local CONFIG = utils.join_path(SCRIPT_DIR, "helska.conf")
 
-------------------------------------------------------------------------
 -- TEMPORARY FILES  (self-cleaning scratch folder)
-------------------------------------------------------------------------
 local SCRATCH = (function()
     local function norm(path)
         local n = tostring(path):gsub("\\", "/")
@@ -569,9 +563,7 @@ local function find_track_id_by_filename(path)
     end
 end
 
-----------------------------------------------------------------------
 -- FULL EXTERNAL SUBTITLE PREPROCESSING
-----------------------------------------------------------------------
 
 local function extract_embedded_text(ffmpeg,track,kind,done)
     local input=absolute_media_path()
@@ -1033,9 +1025,7 @@ local function rebuild_from_original()
 end
 
 
-----------------------------------------------------------------------
 -- TONE COLOR MENU
-----------------------------------------------------------------------
 
 local color_overlay=mp.create_osd_overlay("ass-events")
 local color_menu_open=false
@@ -1297,14 +1287,9 @@ local function color_activate()
     end
 end
 
--- Register one palette hotkey as a FORCED key binding, exactly like Helska
--- Console and the subtitle-font picker. Forced is the highest priority mpv
--- accepts, so the palette reliably outranks the console's always-on forced
--- opener (TAB) and mpv's native defaults while it is open. (The previous
--- define-section/enable-section approach is deprecated in modern mpv and lost
--- the race against the console's forced opener, so TAB opened the console.)
--- Handlers run under pcall so a Lua error can never leave the palette holding
--- input (which would look exactly like a freeze).
+-- Register one palette hotkey as a forced key binding (like the console and
+-- the subtitle-font picker), so it beats the console's forced opener and mpv's
+-- defaults while open. Handlers run under pcall so an error can't freeze input.
 local function add_color_hotkey(key,id,fn,repeatable)
     if type(fn)~="function" then
         mp.msg.error("helska tone colors: missing handler for key "..tostring(key))
@@ -1472,9 +1457,7 @@ mp.register_script_message("helska-subtitle-font-changed", function()
     end
 end)
 
-----------------------------------------------------------------------
 -- SUBTITLE-TRACK CHANGES
-----------------------------------------------------------------------
 
 local function rebuild_for_selected_track()
     if not enabled then return end

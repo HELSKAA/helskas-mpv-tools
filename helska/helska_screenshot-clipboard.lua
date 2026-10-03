@@ -14,9 +14,7 @@ local mp = require "mp"
 local utils = require "mp.utils"
 
 
-----------------------------------------------------------------------
 -- SHARED CONFIG  (helska.conf; any missing entry uses its default)
-----------------------------------------------------------------------
 
 local function helska_script_dir()
     return utils.split_path(debug.getinfo(1, "S").source:sub(2))
@@ -72,9 +70,7 @@ if not is_windows then
     end
 end
 
-------------------------------------------------------------------------
 -- TEMPORARY FILES  (self-cleaning scratch folder)
-------------------------------------------------------------------------
 local SCRATCH = (function()
     local function norm(path)
         local n = tostring(path):gsub("\\", "/")
@@ -231,9 +227,7 @@ mp.register_script_message("helska-console-focus", function(state)
 end)
 
 
-----------------------------------------------------------------------
 -- HELSKA CONSOLE COMPATIBILITY
-----------------------------------------------------------------------
 
 local HELSKA_CONSOLE_ACTIONS = {
     {

@@ -12,9 +12,7 @@
 local mp = require("mp")
 local utils = require("mp.utils")
 
-----------------------------------------------------------------------
 -- CONSTANTS
-----------------------------------------------------------------------
 
 local DEFAULT_OPEN_KEY = "TAB"
 local MAX_VISIBLE = 18
@@ -40,9 +38,7 @@ local RESERVED = {
     all = true,
 }
 
-----------------------------------------------------------------------
 -- STATE
-----------------------------------------------------------------------
 
 local overlay = mp.create_osd_overlay("ass-events")
 
@@ -67,9 +63,7 @@ local caret_timer = nil
 
 
 
-----------------------------------------------------------------------
 -- GENERIC HELPERS
-----------------------------------------------------------------------
 
 local function script_dir()
     return utils.split_path(debug.getinfo(1, "S").source:sub(2))
@@ -115,9 +109,7 @@ local function send(owner, message, ...)
     end
 end
 
-----------------------------------------------------------------------
 -- SHARED CONFIG
-----------------------------------------------------------------------
 
 local function read_config()
     local values = {}
@@ -210,11 +202,8 @@ local MODIFIER_TITLES = {
 }
 local MODIFIER_ORDER = { Ctrl = 1, Alt = 2, Shift = 3, Meta = 4, Super = 5, Win = 6 }
 
--- Render a stored binding key in one consistent, human-friendly form. Storage
--- and mpv registration keep mpv-canonical names (e.g. "ctrl+e", "Ctrl+Shift+s",
--- "SPACE", "F4"); this ONLY changes the label shown inside the console. Letters
--- are always shown uppercase (so "a" and "A" are indistinguishable on screen,
--- per product requirement) and modifiers are normalized to a fixed order.
+-- Format a stored binding key for display only. Storage keeps mpv-canonical
+-- names; letters show uppercase, modifiers in a fixed order.
 local function display_key(raw)
     if not raw then return "" end
     local text = tostring(raw)
@@ -238,10 +227,8 @@ local function display_key(raw)
                 -- F-keys have no case, so they are simply upper-cased.
                 mains[#mains + 1] = low:upper()   -- f4 -> F4
             elseif low:match("^%a$") then
-                -- mpv folds Shift into the character case: a stored uppercase
-                -- letter IS "Shift+<letter>" (mp_normalize_keycode in
-                -- input/keycodes.c). Make that explicit, otherwise a shifted and
-                -- an unshifted letter look identical on screen.
+                -- mpv folds Shift into the letter's case: an uppercase stored
+                -- letter means Shift+<letter>.
                 if token == token:upper() and not has_shift then
                     has_shift = true
                     mod_seen.Shift = true
@@ -266,9 +253,7 @@ local function display_key(raw)
     return out
 end
 
-----------------------------------------------------------------------
 -- DYNAMIC REGISTRY
-----------------------------------------------------------------------
 
 local function sorted_actions()
     local out = {}
@@ -352,9 +337,7 @@ end)
 
 mp.register_script_message("helska-console-refresh", request_discovery)
 
-----------------------------------------------------------------------
 -- NATIVE / TARGET MODELS
-----------------------------------------------------------------------
 
 local function console_rows()
     return {
@@ -388,8 +371,7 @@ end
 local function bindable_targets()
     local out = {}
 
-    -- The opener is intentionally bindable. The other native menu actions are
-    -- not key commands themselves and therefore never enter binding targets.
+    -- The opener is bindable; other native actions are not key commands.
     out[#out + 1] = {
         kind = "target",
         target_kind = "console",
@@ -435,9 +417,7 @@ local function bulk_row(current_mode)
     return nil
 end
 
-----------------------------------------------------------------------
 -- COMMAND-LINE PARSING
-----------------------------------------------------------------------
 
 local function parse_commandline()
     if mode == "capture" then
@@ -448,8 +428,7 @@ local function parse_commandline()
     head = (head or ""):lower()
     rest = rest or ""
 
-    -- A binding verb becomes its completion context only after it is complete.
-    -- The full text remains in query; nothing is cleared on transition.
+    -- A binding verb becomes its completion context only once complete.
     if head == "bind" or head == "unbind" or head == "defaultbind" then
         return head, rest, head
     end
@@ -468,10 +447,8 @@ local function completion_fragment()
     return fragment or ""
 end
 
--- The completion token embedded in an arbitrary command-line string. Used to
--- drive the highlight off the VISIBLE text (soft_query or query): a Tab preview
--- is as much "on the command line" as hard-typed text, so an exact preview
--- match must highlight its own row. Mirrors parse_commandline's token rules.
+-- The completion token inside a command line. Highlighting uses the visible
+-- text (soft_query or query), so a Tab preview highlights its own row too.
 local function fragment_of(text)
     if mode == "capture" then return "" end
     local head, rest = text:match("^%s*([^%s]*)%s?(.*)$")
@@ -501,9 +478,7 @@ local function commit_soft_fill()
     soft_query = nil
 end
 
-----------------------------------------------------------------------
 -- FILTERING / ROW BUILDING
-----------------------------------------------------------------------
 
 local function row_matches(row, needle)
     if needle == "" then return true end
@@ -512,9 +487,7 @@ local function row_matches(row, needle)
         or tostring(row.description):lower():find(needle, 1, true) ~= nil
 end
 
--- Filtering is intentionally broad, but ranking is command-name focused.
--- Lower score is better. Non-name matches remain eligible, but sort after
--- commands whose actual names match the current token.
+-- Filtering is broad; ranking favours command-name matches (lower score wins).
 local function command_name_rank(row, needle)
     if needle == "" then return 0, 0 end
 
@@ -532,9 +505,8 @@ local function command_name_rank(row, needle)
         return 2, pos
     end
 
-    -- Useful fuzzy-ish name preference: if every character of the token
-    -- appears in order in the command name, prefer that over metadata-only
-    -- matches, while still ranking it below literal name containment.
+    -- If the token's characters appear in order in the name, rank above
+    -- metadata-only matches but below a literal name match.
     local ni = 1
     local first = nil
     for qi = 1, #needle do
@@ -559,8 +531,7 @@ local function sort_filtered_rows(list, needle)
         if ar ~= br then return ar < br end
         if ad ~= bd then return ad < bd end
 
-        -- Stable-feeling deterministic tie-breakers. These only matter among
-        -- equally relevant command-name matches.
+        -- Deterministic tie-breakers for equally relevant name matches.
         local an, bn = a.name:lower(), b.name:lower()
         if an ~= bn then return an < bn end
 
@@ -599,10 +570,8 @@ local function rebuild_rows()
     -- A real token reorders surviving rows by command-name relevance only.
     sort_filtered_rows(rows, needle)
 
-    -- The on-screen command line drives the highlight. Use the VISIBLE text
-    -- (soft_query or query), not only the committed query: a Tab preview is part
-    -- of the command line too, so an exact preview ("screenshot-clean") must
-    -- highlight its own row even when the committed text is still "screenshot ".
+    -- Highlight from the visible text (soft_query or query), so a Tab preview
+    -- highlights its own row before it is committed.
     local visible_fragment = fragment_of(soft_query or query):lower()
     local exact_index = nil
     if visible_fragment ~= "" then
@@ -617,20 +586,16 @@ local function rebuild_rows()
     if exact_index then
         selected = exact_index
     elseif #rows > 0 then
-        -- No complete command on the line: keep a manually-placed selection if
-        -- it is still valid, otherwise clear it. Never auto-highlight the
-        -- first row here, so opening the console or a submenu (or typing a
-        -- partial command) shows nothing highlighted until a command is written
-        -- or the user explicitly navigates with arrows / Tab.
+        -- No complete command: keep a valid manual selection, otherwise clear
+        -- it. Never auto-highlight the first row.
         if selected < 1 or selected > #rows then selected = 0 end
     else
         selected = 0
         scroll_top = 1
     end
 
-    -- Selection is visual/navigation state only. Rebuilding recommendations
-    -- must never create, replace, OR clear a soft completion. soft_query is
-    -- owned exclusively by explicit Tab completion and manual editing.
+    -- Selection is visual only; soft_query is owned by Tab completion and
+    -- manual editing, never by rebuilding recommendations.
 end
 
 local function ensure_visible(limit)
@@ -643,10 +608,7 @@ local function ensure_visible(limit)
 
     local max_top = math.max(1, #rows - limit + 1)
 
-    -- Use proportional scroll anchors instead of fixed edge margins.
-    -- Moving down: once the highlight passes ~2/3 of the visible window,
-    -- keep it around that point while more rows remain below.
-    -- Moving up: mirror the behavior at ~1/3 from the top.
+    -- Proportional scroll anchors: hold the highlight near 2/3 down / 1/3 up.
     local lower_anchor = math.max(1, math.ceil(limit * 2 / 3))
     local upper_anchor = math.max(1, limit - lower_anchor + 1)
 
@@ -667,15 +629,12 @@ local function ensure_visible(limit)
         scroll_top = selected - limit + 1
     end
 
-    -- At the physical beginning/end, pin the viewport. The highlight can then
-    -- travel freely through the remaining visible rows to the first/last item.
+    -- At the ends, pin the viewport; the highlight travels freely between.
     if scroll_top < 1 then scroll_top = 1 end
     if scroll_top > max_top then scroll_top = max_top end
 end
 
-----------------------------------------------------------------------
 -- BINDING OPERATIONS
-----------------------------------------------------------------------
 
 local install_open_binding
 
@@ -698,8 +657,7 @@ local function save_target_binding(target, key)
     else
         reload_owner(target)
     end
-    -- The stored key stays mpv-canonical; only the confirmation label is
-    -- normalized to the user-facing scheme.
+    -- Stored key stays mpv-canonical; only the confirmation label is formatted.
     mp.osd_message(target.name .. " bound to " .. display_key(key), 2)
     return true
 end
@@ -707,8 +665,7 @@ end
 local function disable_target(target)
     if not target then return false end
 
-    -- Robustness rule: the console opener cannot be disabled. Otherwise an
-    -- "unbind all" could make the console inaccessible with no in-UI recovery.
+    -- The opener can never be disabled, or "unbind all" would lock you out.
     if target.target_kind == "console" then
         mp.osd_message("Console opener cannot be disabled; rebind it instead", 3)
         return false
@@ -790,9 +747,7 @@ local function bulk_defaultbind()
     mp.osd_message(string.format("%d script commands restored to default keys", count), 2)
 end
 
-----------------------------------------------------------------------
 -- RENDERER
-----------------------------------------------------------------------
 
 local function title_for_mode()
     -- Binding operations are command-line contexts, not separate screens.
@@ -843,8 +798,7 @@ local function render()
     overlay.res_x = w
     overlay.res_y = h
 
-    -- Large bottom-left workspace. It remains bounded and scrollable even
-    -- when arbitrarily many scripts register actions.
+    -- Large bottom-left workspace, bounded and scrollable for any row count.
     local edge = math.max(10, math.floor(24 * scale + 0.5))
     local panel_w = math.min(
         math.floor(1500 * scale + 0.5),
@@ -908,8 +862,7 @@ local function render()
     )
 
     if mode == "capture" and capture_target then
-        -- Capture replaces the results list visually. Keep the command line in
-        -- its normal fixed position and put the capture UI where row 1 used to be.
+        -- Capture replaces the results list, drawn where row 1 was.
         local y = row_y + 3
         ass[#ass + 1] = string.format(
             "{\\an7\\pos(%d,%d)\\fs%d\\b1\\bord0\\shad0\\1c%s}[ PRESS ANY KEY ]",
@@ -947,8 +900,7 @@ local function render()
                 )
             end
 
-            -- Category is shown compactly at the right edge of the command
-            -- column. This avoids extra category rows consuming scroll slots.
+            -- Category shown compactly at the right edge, saving scroll slots.
             if row.group ~= previous_group then
                 previous_group = row.group
             end
@@ -1019,9 +971,7 @@ local function render()
     overlay:update()
 end
 
-----------------------------------------------------------------------
 -- UTF-8 EDITING
-----------------------------------------------------------------------
 
 local function utf8_backspace(text)
     if text == "" then return "" end
@@ -1053,10 +1003,8 @@ local function append_text(text)
     scroll_top = 1
     sync_mode_from_commandline()
 
-    -- A trailing space that turns the line into a complete "bind <target> "
-    -- begins bind-capture right here (a space signals "done"), instead of
-    -- making the user press ENTER. This covers both the ANY_UNICODE and the
-    -- dedicated SPACE binding paths identically.
+    -- A trailing space completing "bind <target> " starts bind-capture here
+    -- (covering both the ANY_UNICODE and dedicated SPACE paths).
     if added == " " and maybe_commit_bind_space() then
         return
     end
@@ -1084,9 +1032,8 @@ local function backspace()
         return
     end
 
-    -- Backspace always edits exactly what is visible on the command line.
-    -- A soft completion therefore becomes a hard fill first, then loses one
-    -- character, and the shortened committed text drives fresh recommendations.
+    -- Backspace edits what is visible: a soft completion becomes a hard fill
+    -- first, then loses one character.
     local visible = soft_query or query
     soft_query = nil
     query = utf8_backspace(visible)
@@ -1104,13 +1051,11 @@ local function ctrl_backspace()
         return
     end
 
-    -- Edit exactly what is visible, just like normal Backspace. A Tab-created
-    -- soft fill becomes committed before deleting the previous whole token.
+    -- Edit what is visible; a Tab soft fill is committed before deleting the token.
     local visible = soft_query or query
     soft_query = nil
 
-    -- First discard trailing whitespace, then discard the preceding non-space
-    -- token. This makes "bind subtitle-font" -> "bind " in one press.
+    -- Drop trailing whitespace, then the preceding token: "bind x" -> "bind ".
     visible = visible:gsub("%s+$", "")
     visible = visible:gsub("%S+$", "")
     query = visible
@@ -1136,9 +1081,7 @@ local function clear_commandline()
     render()
 end
 
-----------------------------------------------------------------------
 -- NAVIGATION / EXECUTION
-----------------------------------------------------------------------
 
 -- Input helpers are defined later, but close_console needs them.
 local unregister_console_input
@@ -1177,10 +1120,8 @@ local function enter_submenu(new_mode)
     render()
 end
 
--- Tell every cooperating Helska script to pause its own hotkeys while the
--- console is open (state = "on") or resume them (state = "off"). Scripts
--- that do not implement the handler ignore this harmlessly, so the handshake
--- never makes a script depend on the console being present.
+-- Ask cooperating scripts to pause their hotkeys while the console is open
+-- ("on") or resume them ("off"). Scripts without the handler ignore it.
 local function broadcast_focus(state)
     mp.commandv("script-message", "helska-console-focus", state)
 end
@@ -1253,8 +1194,7 @@ local function execute_selected()
     local context, fragment = parse_commandline()
     local row = find_exact_row(fragment)
 
-    -- ENTER executes only what is actually written on the command line.
-    -- The visual selector cannot independently cause an action.
+    -- ENTER runs only what is written on the line; the selector alone does nothing.
     if not row then return end
 
     if context == "root" then
@@ -1313,17 +1253,11 @@ local function execute_selected()
     end
 end
 
-----------------------------------------------------------------------
--- INPUT SECTION
-----------------------------------------------------------------------
+-- INPUT
 
--- The console's keyboard is implemented with mp.add_forced_key_binding (the
--- canonical, dispatch-safe primitive the official mpv console uses) instead
--- of named input sections. Modern mpv treats define-section/enable-section as
--- deprecated: the enable-section command rejects non-default flags and
--- define-section rejects custom section names, so a section-based console
--- never actually receives keys. Bindings are added only while the console is
--- open (see register_console_input below) and removed on close.
+-- Keyboard uses mp.add_forced_key_binding rather than input sections: modern
+-- mpv rejects custom section names, so a section-based console would get no
+-- keys. Bindings exist only while the console is open.
 
 local function accepted_event(event, repeatable)
     if not event or not event.event then return true end
@@ -1366,14 +1300,9 @@ local function try_commit_bind()
     return row and begin_bind_capture(row) or false
 end
 
--- Called from append_text when a space is appended. If that space makes the
--- command line a complete "bind <target> " (an exact command with nothing
--- expected after it), begin bind-capture immediately. try_commit_bind handles
--- the trailing space because it re-parses the whole visible line.
--- NOTE: this must assign to the `local maybe_commit_bind_space` forward
--- declaration above append_text (line ~970) so append_text's upvalue resolves.
--- Using `local function` here would create a shadowing local that append_text
--- never sees (it would stay nil and every SPACE would crash the script).
+-- Called from append_text when a space is typed. If the line becomes a complete
+-- "bind <target> ", start bind-capture. Must assign to the forward declaration
+-- above append_text (a `local function` here would shadow it and crash).
 maybe_commit_bind_space = function()
     if mode ~= "bind" then return false end
     local text = commandline_text()
@@ -1389,9 +1318,8 @@ local function make_handler(key, fn, repeatable, capture_as_key)
     end
 end
 
--- Keep mpv itself closable while the modal console owns input. These are
--- player-lifecycle escape hatches, not ordinary hotkeys: close the console
--- state first, then ask mpv to terminate directly.
+-- Keep mpv itself closable while the modal console owns input: close the
+-- console state first, then ask mpv to terminate directly.
 local function quit_mpv()
     close_console()
     mp.commandv("quit")
@@ -1399,11 +1327,8 @@ end
 
 local active_console_keys = {}
 
--- Register one console hotkey as a forced key binding. Forced is the highest
--- priority mpv accepts and cannot be overridden by input.conf or other
--- scripts, so every key registered here reliably wins while the console is
--- open -- including mpv's native defaults (ANY_UNICODE swallows printable
--- shortcuts like "s screenshot"; arrows/SPACE/navigation are bound below).
+-- Register one console hotkey as a forced binding (highest priority, beats
+-- input.conf and native defaults while the console is open).
 local function add_console_key(key, id, fn, repeatable, capture_as_key)
     local name = "helska-console-" .. id
     mp.add_forced_key_binding(
@@ -1415,8 +1340,7 @@ local function add_console_key(key, id, fn, repeatable, capture_as_key)
     active_console_keys[#active_console_keys + 1] = name
 end
 
--- Remove every console hotkey added by register_console_input. Called on
--- close (see close_console) so those keys behave normally again afterwards.
+-- Remove every console hotkey added by register_console_input (called on close).
 unregister_console_input = function()
     for _, name in ipairs(active_console_keys) do
         mp.remove_key_binding(name)
@@ -1429,10 +1353,8 @@ local MOUSE_KEYS = {
     "MBTN_LEFT", "MBTN_RIGHT", "MBTN_MID", "MBTN_BACK", "MBTN_FORWARD"
 }
 
--- Mouse buttons are proposal sources ONLY while bind-capture is active. They
--- are registered on entering capture and removed on leaving, so outside
--- capture the console force-binds no mouse key: clicks behave exactly like
--- normal mpv (no forced pause, and the OSC pause button still works).
+-- Mouse buttons are proposal sources only during bind-capture, so outside
+-- capture clicks behave exactly like normal mpv.
 register_mouse_capture = function()
     unregister_mouse_capture()
     for i, key in ipairs(MOUSE_KEYS) do
@@ -1450,12 +1372,10 @@ unregister_mouse_capture = function()
     mouse_key_names = {}
 end
 
--- Install the console's whole keyboard. Called from open_console (never at
--- startup), so these bindings only exist while the modal console owns input.
+-- Install the console keyboard (only while the console is open).
 local function register_console_input()
-    -- Arbitrary Unicode typing, including IME-produced text. ANY_UNICODE also
-    -- swallows mpv's printable default shortcuts (s, i, o, [ ], m, ...) while
-    -- the console is open, because this binding is forced (highest priority).
+    -- Arbitrary Unicode/IME typing; being forced, it also swallows mpv's
+    -- printable default shortcuts while the console is open.
     add_console_key("ANY_UNICODE", "text", function(event)
         if mode == "capture" then
             capture_event_key(event)
@@ -1471,10 +1391,8 @@ local function register_console_input()
     add_console_key("Shift+TAB", "shift-tab",
         function() move_selection(-1, true) end, true, true)
 
-    -- SPACE appends a space. When that space completes a "bind <target> "
-    -- command line, append_text begins bind-capture immediately (intuitive:
-    -- the space signals "done") instead of waiting for ENTER. For any other
-    -- command, SPACE simply inserts a space.
+    -- SPACE inserts a space; if it completes a "bind <target> " line,
+    -- append_text starts bind-capture immediately.
     add_console_key("SPACE", "space", function()
         append_text(" ")
     end, false, false)
@@ -1523,9 +1441,8 @@ local function register_console_input()
         end
     end, false, false)
 
-    -- Backspace edits the visible command line. Ctrl+Backspace removes the
-    -- previous whole token. Ctrl+A arms "select all", so the following
-    -- Backspace/Delete clears the entire command line.
+    -- Backspace edits the line; Ctrl+Backspace deletes the previous token;
+    -- Ctrl+A arms select-all for the next edit.
     add_console_key("Ctrl+BS", "word-backspace", ctrl_backspace, true, false)
     add_console_key("Ctrl+DEL", "word-delete", ctrl_backspace, true, false)
     add_console_key("BS", "backspace", backspace, true, false)
@@ -1536,18 +1453,14 @@ local function register_console_input()
     add_console_key("Ctrl+q", "quit-ctrl-q", quit_mpv, false, false)
     add_console_key("Alt+F4", "quit-alt-f4", quit_mpv, false, false)
 
-    -- Catch every remaining key (non-printable specials, function keys, etc.).
-    -- Combined with ANY_UNICODE above this keeps the console keyboard fully
-    -- modal: nothing reaches mpv's default bindings while the console is open,
-    -- and in bind-capture an unmapped key becomes the proposed shortcut.
+    -- Catch remaining keys so the keyboard stays fully modal; in bind-capture
+    -- an unmapped key becomes the proposed shortcut.
     add_console_key("UNMAPPED", "unmapped", function(event)
         if mode == "capture" then capture_event_key(event) end
     end, false, false)
 end
 
-----------------------------------------------------------------------
 -- OPEN KEY / LIFECYCLE
-----------------------------------------------------------------------
 
 local OPEN_BINDING_NAME = "helska-console-open"
 
@@ -1623,6 +1536,5 @@ mp.register_event("shutdown", function()
     overlay:update()
 end)
 
--- Advertise discovery once at load as well. Compatible scripts also advertise
--- proactively, so either script load order works.
+-- Advertise at load too, so either script load order works.
 request_discovery()

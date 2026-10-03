@@ -9,9 +9,7 @@
 
 local mp = require("mp")
 local utils = require("mp.utils")
-----------------------------------------------------------------------
 -- SHARED CONFIG  (helska.conf; any missing entry uses its default)
-----------------------------------------------------------------------
 
 local function helska_script_dir()
     return utils.split_path(debug.getinfo(1, "S").source:sub(2))
@@ -53,17 +51,13 @@ local function helska_bind(command_name, default_key)
 end
 
 
-----------------------------------------------------------------------
 -- BINDINGS  (Ctrl+C copy, Ctrl+A toggle auto-copy; needs mpv 0.41+)
-----------------------------------------------------------------------
 
 local autocopy = false
 local last_autocopied = nil
 
 
-----------------------------------------------------------------------
 -- CLEAN SUBTITLE TEXT
-----------------------------------------------------------------------
 
 local function clean_subtitle(text)
     if not text or text == "" then
@@ -96,9 +90,7 @@ local function clean_subtitle(text)
 end
 
 
-----------------------------------------------------------------------
 -- COPY TO CLIPBOARD
-----------------------------------------------------------------------
 
 local function copy_to_clipboard(text, show_osd)
     text = clean_subtitle(text)
@@ -138,10 +130,8 @@ local function copy_to_clipboard(text, show_osd)
 end
 
 
-----------------------------------------------------------------------
 -- CTRL+C
 -- Copy subtitle currently visible on screen
-----------------------------------------------------------------------
 
 local function copy_current_subtitle()
     copy_to_clipboard(
@@ -151,9 +141,7 @@ local function copy_current_subtitle()
 end
 
 
-----------------------------------------------------------------------
 -- AUTO COPY
-----------------------------------------------------------------------
 
 local function subtitle_changed(_, value)
     if not autocopy then
@@ -204,9 +192,7 @@ local function toggle_autocopy()
 end
 
 
-----------------------------------------------------------------------
 -- RESET BETWEEN FILES
-----------------------------------------------------------------------
 
 mp.register_event(
     "file-loaded",
@@ -216,9 +202,7 @@ mp.register_event(
 )
 
 
-----------------------------------------------------------------------
 -- WATCH SUBTITLE CHANGES
-----------------------------------------------------------------------
 
 mp.observe_property(
     "sub-text",
@@ -227,9 +211,7 @@ mp.observe_property(
 )
 
 
-----------------------------------------------------------------------
 -- KEY BINDINGS
-----------------------------------------------------------------------
 
 local function install_main_bindings()
     mp.remove_key_binding("helska-copy-subtitle")
@@ -263,9 +245,7 @@ mp.register_script_message("helska-console-focus", function(state)
 end)
 
 
-----------------------------------------------------------------------
 -- HELSKA CONSOLE COMPATIBILITY
-----------------------------------------------------------------------
 
 local HELSKA_CONSOLE_ACTIONS = {
     {

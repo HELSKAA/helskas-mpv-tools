@@ -6,9 +6,7 @@
 local mp    = require "mp"
 local utils = require "mp.utils"
 
-----------------------------------------------------------------------
 -- SETTINGS
-----------------------------------------------------------------------
 
 local ACTIONS = {
     next = {
@@ -44,9 +42,7 @@ local VIDEO_EXTENSIONS = {
     ["wmv"] = true,
 }
 
-----------------------------------------------------------------------
 -- HELPERS
-----------------------------------------------------------------------
 
 local function script_dir()
     return utils.split_path(debug.getinfo(1, "S").source:sub(2))
@@ -54,9 +50,7 @@ end
 
 local CONFIG_PATH = utils.join_path(script_dir(), "helska.conf")
 
-----------------------------------------------------------------------
 -- TOP-LEFT STATUS TOAST
-----------------------------------------------------------------------
 
 local toast = mp.create_osd_overlay("ass-events")
 local toast_timer = nil
@@ -197,9 +191,7 @@ local function same_path(a, b)
     return a == b
 end
 
-----------------------------------------------------------------------
 -- VIDEO NAVIGATION
-----------------------------------------------------------------------
 
 local function navigate_video(direction)
     local label = direction > 0 and "Next episode" or "Previous episode"
@@ -300,9 +292,7 @@ local function open_previous_video()
     navigate_video(-1)
 end
 
-----------------------------------------------------------------------
 -- SHARED HELSKA BINDING
-----------------------------------------------------------------------
 
 local function read_helska_binding(action_name)
     local file = io.open(CONFIG_PATH, "r")
@@ -353,9 +343,7 @@ local function install_main_bindings()
     end
 end
 
-----------------------------------------------------------------------
 -- HELSKA CONSOLE COMPATIBILITY
-----------------------------------------------------------------------
 
 local HELSKA_CONSOLE_ACTIONS = {
     {
