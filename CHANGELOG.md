@@ -6,7 +6,7 @@ All notable changes to Helska's MPV Tools are recorded here. The project uses
 ## [1.0.1] - 2026-10-04
 
 ### Added
-- `CHANGELOG.md` and `PRE-RELEASE-CHECKLIST.md`.
+- `CHANGELOG.md`.
 - Unit tests for the tone-colour helper (`tests/test_tone_colors.py`) and a
   minimal CI workflow that runs them on Linux and Windows.
 - The release zip now carries FFmpeg's GPLv3 license text and a written source
